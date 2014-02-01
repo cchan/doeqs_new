@@ -1,0 +1,26 @@
+#root htaccess file.
+
+DirectoryIndex index.php index.html
+
+#Error Documents, which annoyingly have to be in the root directory. So now it's localhost:3141
+ErrorDocument 404 /404.php
+ErrorDocument 403 /404.php
+
+order allow,deny
+#Don't include html usually
+<Files ~ "\.(php|jpe?g?|gif|png|js|css|html)$">
+   allow from all
+</Files>
+<Files "">
+   allow from all
+</Files>
+
+# ultimate hotlink protection http://perishablepress.com/creating-the-ultimate-htaccess-anti-hotlinking-strategy/
+<IfModule mod_rewrite.c>
+ RewriteEngine on
+ RewriteCond %{HTTP_REFERER}     !^$
+ RewriteCond %{REQUEST_FILENAME} -f
+ RewriteCond %{REQUEST_FILENAME} \.(gif|jpe?g?|png|ico)$           [NC]
+ RewriteCond %{HTTP_REFERER}     !^https?://([^.]+\.)?domain\. [NC]
+ RewriteRule \.(gif|jpe?g?|png|ico)$                             - [F,NC,L]
+</ifModule>

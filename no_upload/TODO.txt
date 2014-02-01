@@ -1,0 +1,42 @@
+PUSH TO PBTN!
+
+
+admin.php
+handling duplicates (e.g. if upload second time)
+regex line breaks handling
+pdf, multiple upload
+weird unicode char appearances
+user system :O
+	=>mark-as-read
+	=>actual tabulation
+	=>likes/dislikes/keepforlaterresearch(whole research page, with all sorts of resources - even a forum?)
+		=>install that plugin, where you can select and clickwhatever and it'll google it for you (preferably in a frame?)
+	=>instead of ratings, "got this right/wrong" plus above; make "mark as bad" a special option (xmlhttp? new window?)
+hotkeys - ctrl-enter - js enhancements!
+Give you words one by one?
+More elegant answer-hiding system
+
+Deal with nonparsing questions... -_- =>always MC.
+Also check that it's ACTUALLY ignoring case.
+Remove var_dumps
+Remind of the name of the file you just uploaded and are now correcting
+Change that -3 threshold... ?
+Make a config file full of stuff, and a local one, sorta like Tidor
+autodetect whether mc or sa? Rather than giving it back to you? =>also give option to say "mc" or "sa" instead of long version
+	=>also give option to only give first letter of subject or type
+
+Add astro, compsci, general sci? Autocorrect?
+Also "Earth" for ess; also doesn't accept "EARTH & SPACE"
+
+FAILED on Jeremy Arbesfield .docx 10-29-13
+occasionally (like on jongwon's) appends large string of data chars
+see QID90, "X) Their abilit Y) to synthesize hemoglobinY)The mechanism..." =>misinterpreted D:
+
+test on more browsers
+
+
+
+
+
+WAIT
+directentry fails

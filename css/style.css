@@ -1,0 +1,121 @@
+#main-wrapper{
+width:70%;min-width:500px;
+margin-left:auto;margin-right:auto;
+margin-top:50px;
+border:solid 1px #000000;
+padding:20px;
+}
+#questions{
+width:80%;min-width:300px;
+margin-left:auto;margin-right:auto;
+min-height:100px;
+padding:10px;
+}
+.question{
+width:80%;min-width:300px;
+margin:10px auto 10px auto;
+min-height:100px;
+border:solid 1px #000000;
+padding:10px;
+}
+
+#options{
+width:80%;min-width:300px;
+margin:10px auto 10px auto;
+border:solid 1px #000000;
+padding:10px;
+}
+#options>div{
+margin-bottom:10px;
+}
+#options label{
+margin:0 5px;
+}
+
+.hiddenanswer .hov{
+font-weight:bold;color:#00f;font-size:0.8em;
+}.hiddenanswer .ans{
+display:none;font-weight:bold;
+}
+
+.no-js .hiddenanswer:hover .ans{
+display:inline;
+}.no-js .hiddenanswer:hover .hov{
+color:transparent;
+}
+
+#footer{
+width:60%;min-width:450px;
+margin-left:auto;margin-right:auto;
+margin-top:10px;
+color:#FFFFFF;
+background-color:#000000;
+text-align:center;
+font-weight:bold;
+border-radius:5px;
+}
+
+#bugrept{
+position:fixed;
+border:solid 3px #000000;
+border-radius:10px;
+width:240px;right:10px;
+background-color:#FFFFFF;
+padding:10px;
+top:45px;
+box-shadow:0 0 1px 1px #999999;
+}
+#bugrept textarea{
+width:90%;
+height:5em;
+display:block;
+font-size:0.8em;
+font-family:Courier, sans-serif;
+}
+#bugrept .text{
+font-size:0.75em;
+}
+#bugrept #clicker{
+font-size:0.7em;
+}
+#bugrept #thanksmessage{
+height:50px;
+font-size:0.9em;
+color:#00f;
+font-weight:bold;
+display:none;
+text-align:center;
+overflow-y:hidden;
+}
+
+#loginformtable{
+width:100%;
+table-layout:fixed;
+}
+#loginformtable>tr>td,#loginformtable>tbody>tr>td{
+border:solid 1px #000000;
+width:50%;
+vertical-align:top;
+padding:10px;
+}
+
+.alert_neg,.alert_pos,.alert_neut{
+font-weight:bold;
+width:100%;
+text-align:center;
+border-radius:5px;
+padding:5px;
+margin:3px;
+}
+.alert_neg{
+color:#fff;
+background-color:#c00;
+}
+.alert_pos{
+color:#fff;
+background-color:#0c0;
+}
+.alert_neut{
+color:#fff;
+background-color:#000;
+}
