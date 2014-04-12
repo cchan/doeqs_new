@@ -18,6 +18,7 @@ $DB_PASSWORD = "A VERY BAD PASSWORD";
 $DB_DATABASE = "DOE_QUESTIONS";
 
 /***********************Universal Salt*********************/
+//Don't change it unless you know what you're doing.
 $universalSalt='blah blah blah generate something random from grc.org or something like that yeah';
 
 /***********************RECAPTCHA**********************/

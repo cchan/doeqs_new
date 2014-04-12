@@ -19,12 +19,11 @@ elseif(csrfVerify()){
 		//Naturally all this stuff is useless without proper SSL security. Shhhhhhhhhhh.
 		if(loginEmailPass($_POST['email'],$_POST['pass'])){
 			reset_attempts('login');
-			if(isSet($_SESSION['login_redirect_back'])){
+			if(isSet($_SESSION['login_redirect_back'])){//--todo-- redirect back immediately, don't redirect
 				$lr=$_SESSION['login_redirect_back'];
-				header('Refresh: 3; '.$lr);
-				alert('Logged in! In a few seconds, you should be redirected back to
-				<a href="'.htmlentities($lr).'">'.htmlentities($lr).'</a>.',1);
-				unset($_SESSION['login_redirect_back'],$lr);
+				alert('Logged in!',1,basename($lr));
+				unset($_SESSION['login_redirect_back']);
+				header('Location: '.$lr);
 			}
 			else
 				alert('Successfully logged in!',1);
@@ -63,6 +62,7 @@ else{?>
 		'Captcha:<br>'.getCaptcha(),
 		['name'=>'signup','type'=>'submit','value'=>'Sign Up']
 	])?>
+	Register to gain access to all features of the site! To be added soon: question tracking, subjects, common words, etc.
 	</td>
 	<td>
 	<?=generateForm(['action'=>'login.php','method'=>'POST'],[

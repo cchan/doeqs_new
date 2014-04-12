@@ -123,11 +123,7 @@ function generateForm($form,$inputs){
 	foreach($form as $name=>$value)
 		$a.=' '.$name.'="'.$value.'" ';
 	
-	$form=<<<HEREDOC
-<form $a>
-<input type="hidden" name='ver' value="$csrf"/>
-<table>
-HEREDOC;
+	$form="<form $a><input type='hidden' name='ver' value='$csrf'/><table>";
 	
 	foreach($inputs as $input){
 		if($input=='')
@@ -192,6 +188,9 @@ function userAccess($minPrivilegeLevel){
 	else return $nUser>=$nAllowed;
 }
 function restrictAccess($minPrivilegeLevel){
+	global $USER_LOGIN_REQUIRED;
+	if($minPrivilegeLevel=='u' && !$USER_LOGIN_REQUIRED)
+		$minPrivilegeLevel='x';
 	if(!userAccess($minPrivilegeLevel))
 		forceLogin();
 }
@@ -215,6 +214,7 @@ function loginEmailPass($email,$pass){
 	return true;
 }
 function forceLogin(){
+	global $DOEQS_URL;
 	session_total_reset();
 	alert('Oops, you need to log in to access <i>'.basename($_SERVER['REQUEST_URI']).'</i>.',-1,'login.php');
 	$_SESSION['login_redirect_back']=$_SERVER['REQUEST_URI'];
@@ -222,8 +222,8 @@ function forceLogin(){
 	die();
 }
 function logout(){//--todo--uhhhhhh that's it? shouldn't it be whitelist-style erasure? idk, since $_SESSION['attempts_*'] needs to stay alive
-	foreach($_SESSION as $s)
-		if(strpos($s,'attempt_')===false)unset($s);
+	foreach($_SESSION as $name=>$val)
+		if(strpos($name,'attempt_')===false)unset($_SESSION[$name]);
 }
 function saltyStretchyHash($pass,$salt){//WAAAY overdoing it. Messing with any sort of brute force attack.
 	if(!$salt){err('Needs salt');return;}
@@ -246,7 +246,7 @@ function newProfileError($email,$pass,$confpass){
 	if($pass!==$confpass)return 'Passwords do not match.';
 	if(strlen($pass)<8)return 'Password too short (must be at least 8 characters).';
 	
-	if($database->query_assoc('SELECT 1 from users WHERE email=%0%',[$email]))
+	if($database->query_assoc('SELECT 1 from users WHERE email=%0% LIMIT 1',[$email]))
 		return 'That email already exists.';
 	
 	$permissions='u';//regular user
@@ -262,7 +262,7 @@ function newProfileError($email,$pass,$confpass){
 function chkCaptcha(){
 	require_once('classes/recaptchalib.php');
 	global $RECAPTCHA_privatekey;
-	$resp = recaptcha_check_answer ($privatekey,
+	$resp = recaptcha_check_answer ($RECAPTCHA_privatekey,
 		$_SERVER["REMOTE_ADDR"],
 		$_POST["recaptcha_challenge_field"],
 		$_POST["recaptcha_response_field"]);
@@ -271,6 +271,6 @@ function chkCaptcha(){
 function getCaptcha(){
 	require_once('classes/recaptchalib.php');
 	global $RECAPTCHA_publickey;
-	return recaptcha_get_html($publickey);
+	return recaptcha_get_html($RECAPTCHA_publickey);
 }
 ?>

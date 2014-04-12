@@ -16,19 +16,19 @@ if(csrfVerify()){
 	}
 	elseif(isSet($_POST["truncQs"])){
 		$database->query("TRUNCATE TABLE questions");
-		echo "TRUNCATE TABLE executed.<br><br>";
+		alert("TRUNCATE TABLE executed.<br><br>",1);
 	}
 	elseif(isSet($_POST["timesViewed"])){
 		$database->query("UPDATE questions SET TimesViewed=0");
-		echo "All questions' times-viewed-s zeroed.<br><br>";
+		alert("All questions' times-viewed-s zeroed.<br><br>",1);
 	}
 	elseif(isSet($_POST["markBad"])){
 		$database->query("UPDATE questions SET MarkBad=0");
-		echo "All questions' marked-as-bad-s zeroed.<br><br>";
+		alert("All questions' marked-as-bad-s zeroed.<br><br>",1);
 	}
 	elseif(isSet($_POST["optimizeTables"])){
 		$database->query("OPTIMIZE TABLE users,questions");
-		echo "OPTIMIZE TABLE executed<br><br>";
+		alert("OPTIMIZE TABLE executed<br><br>",1);
 	}
 	elseif(isSet($_POST["qInt"])){
 	//Subject in {0,1,2,3,4}
@@ -54,7 +54,7 @@ $filesTotalSize=dirsize(__DIR__);
 
 ?>
 <form action="admin.php" method="POST">
-	<input type="hidden" name='ver' value="<?=csrfCode();?>"/>
+	<input type="hidden" name='ver' value="<?=csrfCode()?>"/>
 	<fieldset>
 		<legend>Database</legend>
 		<fieldset>
@@ -74,7 +74,7 @@ $filesTotalSize=dirsize(__DIR__);
 			<input type="submit" name="qInt" value="Integrity Check" disabled/>
 		</fieldset>
 		<input type="submit" name="optimizeTables" value="Optimize Tables"/><br>
-		<?php //pma link ?>
+		<a href="<?=$PMA_LINK?>">PHPMyAdmin</a>
 	</fieldset>
 	<fieldset>
 		<legend>Server Files</legend>

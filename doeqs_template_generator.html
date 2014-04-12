@@ -1,0 +1,83 @@
+<div style="width:80%;border:solid 1px #000000;padding:20px;margin:20px auto;">
+	<h1>DOE Question Template Generator</h1>
+	<p>Based on the subjects-per-person given, generates a DOE questions template with question assignments.</p>
+	<small><i>requires JavaScript and JQuery and cookies to be enabled, which should be the default</i></small><br><br>
+	<table border=1><tr><th colspan=5>Example - 4 phys 5 chem</th><tr><td>Name:<td><input value="Henry Hsu" disabled/><td>Subjects:<td><input value="4p5c" disabled/><td>x</table><br>
+	<div id="subjdisplay"></div>
+	<table border=1 id='nsform'><tr><th colspan=5>Template Generator</th></table>
+	<button onclick="nsadd('','');">Add Another</button>
+	<button onclick="genTemplate();generateLink();saveQCookie();selTemplate();">Generate Template</button>
+	<button onclick="selTemplate();">Select Template</button><br>
+	Permalink: <a id="doclink" href=""></a><br><br>
+	<div id="html" style="border:solid 1px #000000;"><center>template to be here</center></div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js">\x3C/script>')</script>
+<script src="js/jquery.jsoncookie.js"></script>
+<script>
+/******CONFIG******/
+var SUBJTRANSLATE={b:"BIOLOGY",c:"CHEMISTRY",p:"PHYSICS",m:"MATH",e:"EARTH AND SPACE SCIENCE",n:"ENERGY"};
+/******ENDCNF******/
+for(var i in SUBJTRANSLATE)$('#subjdisplay').append(i+'='+SUBJTRANSLATE[i]+'; ');
+
+function nsadd(n,s){$('#nsform').append('<tr><td>Name:<td><input class="name" value="'+htmlentities(n)+'"/><td>Subjects:<td><input class="subj" value="'+htmlentities(s)+'"/><td onclick="$(this).parents(\'tr\').remove();">x');}
+function selTemplate(){
+	if(window.getSelection())window.getSelection().selectAllChildren(document.getElementById('html'));
+	else alert("Your browser doesn't support selection properly D: You can probably just manually select the entire document and that'll do just fine.");
+}
+function generateLink(){
+	getstr="?";
+	var names=$(".name");
+	names.each(function(){getstr+=encodeURIComponent(this.value)+'='+encodeURIComponent($(".subj").get(names.index(this)).value)+'&';});
+	var linktext=location.origin+location.pathname+getstr;
+	$("#doclink").text(linktext).attr('href',linktext);
+}
+function saveQCookie(){
+	var cookiearr=[];
+	$(".name").each(function(){cookiearr.push([this.value,$(".subj").get($(".name").index(this)).value]);});
+	$.cookie("qcook",cookiearr);
+}
+function genTemplate(){
+	var qarr=[];
+	$(".name").each(function(){
+		var sv=$(".subj").get($(".name").index(this)).value;
+		for(var i=0;i<sv.length;i+=2){
+			if(!parseInt(sv[i])){alert("Invalid subject number for '"+htmlentities(this.value)+"'");return false;}
+			if(!(s=SUBJTRANSLATE[sv[i+1].toLowerCase()])){alert("Invalid subject for '"+htmlentities(this.value)+"'");return false;}
+			for(var j=0;j<parseInt(sv[i]);j++)
+				qarr.push([s,this.value]);
+		}
+	});
+	qarr=mooShuffle(qarr);
+	
+	var fullhtml="<p style='text-align:center;font-weight:bold;'>[[team]]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DOE Questions&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[[date]]</p>";
+	var x=["TOSS-UP","BONUS"];
+	for(var i=0;i<qarr.length;i++)for(var j=0;j<x.length;j++)
+		fullhtml+="<p style='text-align:center;font-weight:bold;'>"+x[j]+"</p>"
+			+"<div style='font-weight:normal;'>"+i+") "+htmlentities(qarr[i][0])+" <i>Question Type</i> "+htmlentities(qarr[i][1])+"</div>"
+			+"<div style='font-weight:normal;'>ANSWER:&nbsp;</div>";
+	$("#html").html(fullhtml+"<br>");
+}
+function mooShuffle(arr){//Fisher-Yates Shuffle, but which I discovered myself independently. So I get to name it ^^
+	var ind,tmp;
+	for(var i=arr.length-1;i>0;i--){
+		ind=Math.floor(Math.random()*i);//Get random one
+		tmp=arr[i];arr[i]=arr[ind];arr[ind]=tmp;//Swap with last one in sorted area
+	}
+	return arr;
+}
+function htmlentities(str) {//http://css-tricks.com/snippets/javascript/htmlentities-for-javascript/
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+//Fetch data from memory
+//if GET parameters, override everything; else if cookie fill it in, otherwise just single blank.
+var getarr={},nsarr=[],a=location.search.substr(1).split('&');
+for(var i=0;i<a.length;i++){var x=a[i].split('=');if(!x[0]||!x[1])continue;getarr[decodeURIComponent(x[0])]=decodeURIComponent(x[1]);}
+if(getarr){for(var key in getarr)if(getarr.hasOwnProperty(key))nsarr.push([key,getarr[key]]);}
+else if((nsarr=$.cookie("qcook")).length==0)nsarr=[['','']];
+for(var i=0;i<nsarr.length;i++)nsadd(nsarr[i][0],nsarr[i][1]);
+
+generateLink();
+</script>

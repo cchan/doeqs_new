@@ -11,14 +11,15 @@ $DEBUG_MODE=false;//True if want lots of debug output. False on real production 
 
 $SERVER_DOWN=false;//Teapot on every page if it's true. See top of functions.php. :)
 
+$USER_LOGIN_REQUIRED=false;
+
 /**********************METADATA*********************/
-$DOEQS_URL='http://pointlessbutton.xp3.biz/doeqs/';
 $VERSION_NUMBER='0.2.2';
 $WEBMASTER_EMAIL='moose54321@gmail.com';
 date_default_timezone_set("America/Toronto");//(No Boston)
 
 /************************SESSION*********************/
-$SESSION_TIMEOUT_MINUTES=10;
+$SESSION_TIMEOUT_MINUTES=30;
 ini_set('session.gc_maxlifetime',600);
 //$MAX_REQUESTS_PER_MINUTE=30;//Still to be implemented. What's a good number, and what's a good response?
 ini_set('display_errors',false);
@@ -47,7 +48,7 @@ $ruleSet=array(//...to be honest, this is annoying.
 );
 $MARK_AS_BAD_THRESHOLD=2;//RANDQ: How many times can a question can be marked bad until being ignored?
 $MAX_NUMQS=25;//RANDQ: How many questions can you fetch per pageload?
-$DEFAULT_NUMQS=5;//RANDQ: Default number of questions to fetch
+$DEFAULT_NUMQS=25;//RANDQ: Default number of questions to fetch
 
 /****************FILE TRANSFER LIMITS****************/
 $UPLOAD_MAX_FILESIZE = 2;ini_set('upload_max_filesize',$UPLOAD_MAX_FILESIZE);//MB
@@ -60,21 +61,26 @@ $ERROR_LOG_FILE='error_log.log';
 $BUG_REPORT_FILE='bug_log.log';
 
 /******************PAGES AND NAV*****************/
-//This specifies not only the navbar, but also the allowed pages accessible. 404 if not in below, even if real file.
+//This specifies not only the navbar, but also the allowed pages accessible. 404 if not in below, even if real file. :)
+//[this may cause lots of consternation; I'm sorry. Just make sure to read comments, they're good for you.]
 //db entry for each page? [file, title, nav, permission, visibility] db is comp intensive but nicer and live-editable
-$pagesTitles=array(
+$pagesTitles=array(//Navbar
 	"index"=>"Home",
 	"input"=>"Question Entry",
 	"randq"=>"Random Question",
 	"about"=>"About",
 	"login"=>"Login",
+	"quizup"=>"QuizUp Edition",
 );
-$hiddenPagesTitles=array(
+$hiddenPagesTitles=array(//Not in navbar but accessible
 	"bugs"=>"Bug Report/Feature Request",
 );
-$adminPagesTitles=array(
+$adminPagesTitles=array(//In navbar and accessible, but only for admins
 	"admin"=>"Admin",
 );
+
+//Server-specific
+require "config.server.php";
 
 /******************CUSTOM LOCAL*******************/
 @include "config.local.php";//If necessary, stuff will be overridden here as local dev settings.

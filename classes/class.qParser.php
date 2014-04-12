@@ -1,6 +1,9 @@
 <?php
 if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 
+//todo: get parsing to actually work (@Videh, does he have a better way to parse than regex)
+//make MC answers not just WXYZ, store full text THEN compare. Comparison can be done with MC detection followed by assoc algorithm
+
 class qParser{
 	public function __construct(){}
 	
@@ -47,8 +50,8 @@ class qParser{
 		$e='[\:\.\)]';//Endings: W. or W) or W- or W:. //can't have space because if has "asdfy asdf" as x, will catch "y "
 		$mcChoices='';
 		$choiceArr=array_merge($ruleSet['MCChoices'],array("ANSWER"));
-		for($i=0;$i<4;$i++)$mcChoices.=$choiceArr[$i].'\)((?:(?!'.$choiceArr[$i+1].'\))[^\n\r])*)\s*';
-		return '/(TOSS ?\-? ?UP|BONUS)\s*(?:([0-9]+)[\.\)\- ])?\s*'.$ruleSet["SubjRegex"].'\s*(?:Multiple Choice\s*((?:(?!W'.$e.')[^\n\r])*)\s*'.$mcChoices.'|Short Answer\s*((?:(?:(?!ANSWER'.$e.')[\s\S])*)(?:\s*[IVX0-9]+'.$e.'(?:(?!ANSWER'.$e.')(?![IVX0-9]+'.$e.')[^\n\r])*)*))\s*ANSWER'.$e.'*\s*([WXYZ]?)((?:[^\n\r])*)([\n\r]|$)/i';
+		for($i=0;$i<4;$i++)$mcChoices.=$choiceArr[$i].'\)((?:(?!'.$choiceArr[$i+1].'\))[\)\. ])*)\s*';
+		return '/(TOSS ?\-? ?UP|BONUS)\s*(?:([0-9]+)[\.\)\- ])?\s*'.$ruleSet["SubjRegex"].'\s*(?:Multiple Choice\s*((?:(?!W'.$e.')[\)\. ])*)\s*'.$mcChoices.'|Short Answer\s*((?:(?:(?!ANSWER'.$e.')[\s\S])*)(?:\s*[IVX0-9]+'.$e.'(?:(?!ANSWER'.$e.')(?![IVX0-9]+'.$e.')[\)\. ])*)*))\s*ANSWER'.$e.'*\s*([WXYZ]?)((?:[\)\. ])*)([\n\r]|$)/i';
 	}
 	//for($i=0;$i<4;$i++)$mcChoices.=$choiceArr[$i].$e.'((?:(?!'.$choiceArr[$i+1].$e.')[\s\S])*)\s*';
 	//return '/(TOSS\-?UP|BONUS)\s*(?:([0-9]+)[\.\)\- ])?\s*'.$subjChoices.'\s*(?:Multiple Choice\s*((?:(?!W'.$e.')[\s\S])*)\s*'.$mcChoices.'|Short Answer\s*((?:(?:(?!ANSWER'.$a.')[^\s\S])*)(?:\s*[IVX0-9]+'.$e.'(?:(?!ANSWER'.$a.')(?![IVX0-9]+'.$e.')[\s\S])*)*))\s*ANSWER'.$a.'*\s*((?:(?![\n\r]|$|TOSS\-?UP|BONUS)[\s\S])*)/i';

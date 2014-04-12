@@ -2,18 +2,18 @@
 if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 
 /*
-class.DB.php
+class.DB2.php
 
 Written by Clive Chan in PHP
 Licensed under a Creative Commons Attribution-ShareAlike 4.0 International License
 http://creativecommons.org/licenses/by-sa/4.0/
 
-Defines the DB class, through which consistently secure database queries can be made.
+Defines the DB2 class, through which consistently secure, shorter database queries can be made.
+Different from DB in that it uses the [pdo database thingy] and also does not use %n% since it means something in SQL.
 */
 
-/*class DB
-Database access class.
-Makes databasing more secure (consistently sanitized/constructed queries) and shorter code.
+/*class DB2
+
 Dependencies:
 	PHP MySQLi (introduced in PHP 5)
 	globals $DB_DOMAIN, $DB_UNAME, $DB_PASSW, [and optionally $DB_DB] all defined
@@ -26,9 +26,9 @@ Potential improvements:
 
 USAGE:
 Initialization
-	$db=new DB();			//Constructs database object connecting to database $DB_DB
-	$db=new DB;				//Same as above
-	$db=new DB('asdf');		//Constructs database object connecting to database 'asdf'
+	$db=new DB2();			//Constructs database object connecting to database $DB_DB
+	$db=new DB2;				//Same as above
+	$db=new DB2('asdf');		//Constructs database object connecting to database 'asdf'
 Queries
 	$db->query('SELECT col1, col2 FROM table1 WHERE id=%0% AND name=%1%',[$_POST['id'],$name]);
 		//Constructs the query from the first template string, and substituting each %n%
@@ -51,7 +51,7 @@ Closing
 */
 
 
-final class DB{
+final class DB2{
 	/*
 	mysqli $con
 		The original purpose of $DB, to encapsulate privately the $con variable.
@@ -168,7 +168,7 @@ final class DB{
 		if(!$this->con)return false;
 		
 		$qresult=$this->query($template,$replaceArr);
-		//if($this->num_rows != 1)$this->err('Query_assoc on more than one row (or zero)');
+		if($this->num_rows != 1)$this->err('Query_assoc on more than one row (or zero)');
 		if($qresult===true)return true;//Not a data-gathering query, like INSERT or DELETE or UPDATE
 		return $qresult->fetch_assoc();//A data-gathering query, like SELECT
 	}
@@ -262,7 +262,6 @@ final class DB{
 		$helpful=true;
 		if($helpful)$this->error='DB error: '.htmlentities($str);
 		else $this->error='Error.';
-		trigger_error($this->error,E_USER_ERROR);
 		$this->__destruct();
 	}
 };

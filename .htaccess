@@ -1,6 +1,7 @@
 #root htaccess file.
 
 DirectoryIndex index.php index.html
+Options -Indexes
 
 #Error Documents, which annoyingly have to be in the root directory. So now it's localhost:3141
 ErrorDocument 404 /404.php

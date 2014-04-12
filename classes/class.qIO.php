@@ -5,13 +5,16 @@ if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 Contains powerful question-interface class qIO.
 
 DOCUMENTATION OF DATABASE
---todo--
+--todo-- fill this out
 */
 
 
 class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	//private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
 	private $Questions;
+	
+	public $error;
+	
 	public function __construct(){
 		//$this->QID=$this->isB=$this->Subject=$this->isSA=$this->Question=$this->MCChoices=$this->Answer=array();
 	}
@@ -21,6 +24,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	public function clear(){
 		if(!is_null($this->Questions))foreach($this->Questions as $q)if($q[0]==0)$this->err('clear: Uncommitted added questions.');
 		$this->Questions=array();
+		return $this;
 	}
 	public function addRand($parts,$subjects,$types,$num){//arrays of the numbers to include eg subj [0,1,4] for b,c,e
 		global $database, $MARK_AS_BAD_THRESHOLD, $ruleSet, $MAX_NUMQS;
@@ -46,20 +50,20 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		}
 		//NOTE that TimesViewed is despite categories, and if you have something like 2 10 10 10, you'll get the 2 at least 8 times in a row.
 			//The assumption that there is a large pool for _each_ possible classification (2*5*2=20 of them) eliminates this problem.
-		$query.=" ORDER BY TimesViewed ASC, RAND() LIMIT $num";//Order by TimesViewed, and then randomize within each TimesViewed value.
+		$query.=" ORDER BY ". /*"TimesViewed ASC, ".*/ "RAND() LIMIT $num";//Order by TimesViewed, and then randomize within each TimesViewed value.
 		$result=$database->query($query);
 		
-		if($result->num_rows==0)return "No such questions exist.";
+		if($result->num_rows==0)$this->user_err("No such questions exist.");
 		
 		$i=count($this->Questions);
 		while($row=$result->fetch_assoc()){
 			$this->Questions[]=array($row["QID"],$row["isB"],$row["Subject"],$row['isSA'],
 				$row["Question"],$row["MCW"],$row["MCX"],$row["MCY"],$row["MCZ"],$row['Answer']);
 		}
-		$this->updateIs(range($i,count($this->Questions)-1),"TimesViewed=TimesViewed+1");
-		if($result->num_rows!=$num)return "More questions requested than such questions exist.";
+		$this->updateIs(range($i,count($this->Questions)-1),"TimesViewed=TimesViewed+1");//--todo-- do this in user-specific storage instead.
+		if($result->num_rows!=$num)$this->user_err("More questions requested than such questions exist.");
 		
-		return false;//'no errors'
+		return $this;
 	}
 	public function addByQID($qids){
 		global $database;
@@ -67,7 +71,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		
 		$query="SELECT QID, isB, Subject, isSA, Question, MCW, MCX, MCY, MCZ, Answer FROM questions WHERE (";
 		foreach($qids as $i=>$qid){
-			if(!val_int($qid)||intval($qid)<=0)$this->err("addByQID: Invalid QID $qid.");
+			if(!val_int($qid)||intval($qid)<=0)$this->user_err("Invalid QID $qid.");
 			$query.=" QID=".intval($qid)." OR ";
 		}
 		$query.=" 0) AND Deleted=0 LIMIT ".count($qids);
@@ -75,12 +79,14 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		$this->updateQIDs($qids,"TimesViewed=TimesViewed+1");
 		
 		$result=$database->query($query);
-		if($result->num_rows<count($qids))$this->err('addByQID: QIDs do not exist.');
+		if($result->num_rows<count($qids))$this->user_err('Some QIDs do not exist.');
 		
 		while($row=$result->fetch_assoc()){
 			$this->Questions[]=array($row['QID'],$row['isB'],$row['Subject'],$row['isSA'],
 				$row['Question'],$row['MCW'],$row['MCX'],$row['MCY'],$row['MCZ'],$row['Answer']);
 		}
+		
+		return $this;
 	}
 	public function addByArray($paramsArray){//Add to the array of questions, each from array or ID.
 		global $ruleSet;
@@ -100,9 +106,9 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 			//Check the validity of these.
 			//Handle JS-side too...
 			$params['isB']=($params['isB']==1);
-			if(!val_int($params['Subject'])||!array_key_exists($params['Subject'],$ruleSet['Subjects']))$this->err('addByArray: Invalid subject');
+			if(!val_int($params['Subject'])||!array_key_exists($params['Subject'],$ruleSet['Subjects']))$this->user_err('Invalid subject');
 			$params['isSA']=($params['isSA']==1);
-			if($params['Question']=='')$this->err('Blank question');
+			if($params['Question']=='')$this->user_err('Blank question');
 			
 			//Deal with MC vs SA answers
 			if(!$params['isSA']){
@@ -110,13 +116,13 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				if(count(array_intersect_key(array_flip($required),$params))!=count($required))$this->err('Missing parameters.');
 				for($i=0;$i<count($ruleSet['MCChoices']);$i++)
 					if(empty($params['MC'.$ruleSet['MCChoices'][$i]]))
-						$this->err('addByArray: Some multiple choice blank');
+						$this->user_err('Some multiple choice blank');
 				if(!(array_key_exists('MCa',$params)&&is_int($params['MCa'])&&array_key_exists($params['MCa'],$ruleSet['MCChoices'])))
-					$this->err('addByArray: Invalid MC answer chosen');
+					$this->user_err('Invalid MC answer chosen');
 				$params['Answer']=$params['MCa'];
 			}else{
-				if(!array_key_exists('Answer',$params))$this->err('addByArray: Missing parameters.');
-				if($params['Answer']=='')$this->err('addByArray: Blank answer');
+				if(!array_key_exists('Answer',$params))$this->err('Missing parameters.');
+				if($params['Answer']=='')$this->user_err('Blank answer');
 				$params['MCW']=$params['MCX']=$params['MCY']=$params['MCZ']=NULL;
 			}
 			
@@ -126,10 +132,13 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				$params['Question'],$params['MCW'],$params['MCX'],$params['MCY'],$params['MCZ'],
 				$params['Answer']);
 		}
+		
+		return $this;
 	}
 	
+	//Generally doesn't need to be used.
 	public function commit(){
-		if(empty($this->Questions)||count($this->Questions)==0)return;
+		if(empty($this->Questions)||count($this->Questions)==0)return $this;
 		global $database,$ruleSet;
 		$q='INSERT INTO questions (isB, Subject, isSA, Question, MCW, MCX, MCY, MCZ, Answer) VALUES ';//Set up query string. The max query length is something like 16MB so no probs there
 		$valarr=array();//array of values to be submitted to and sanitized by $database->query
@@ -157,9 +166,6 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		global $ruleSet;
 		$MCOptions='';
 		//QID,isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
-		if(!$this->Questions[$i][3])
-			foreach($ruleSet['MCChoices'] as $ind=>$letter)
-				$MCOptions.='<div>'.$letter.') '.$this->Questions[$i][5+$ind].'</div>';
 		return str_replace(
 			array(
 				'%N%',
@@ -168,8 +174,8 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				'%SUBJECT%',
 				'%TYPE%',
 				'%QUESTION%',
-				'%MCOPTIONS%',
-				'%ANSWER%'
+				'%W%','%X%','%Y%','%Z%',//--todo-- make this extensible to non-WXYZ somehow
+				'%ANSWER%','%ANSCHOICE%'
 			),
 			array(
 				$i,
@@ -178,10 +184,11 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				$ruleSet['Subjects'][intval($this->Questions[$i][2])],
 				$ruleSet['QTypes'][intval($this->Questions[$i][3])],
 				nl2br(strip_tags($this->Questions[$i][4])),
-				$MCOptions,
+				$this->Questions[$i][5],$this->Questions[$i][6],$this->Questions[$i][7],$this->Questions[$i][8],
 				($this->Questions[$i][3])?
 					strip_tags($this->Questions[$i][9])//short answer, just there
-					:$ruleSet['MCChoices'][$this->Questions[$i][9]].') '.$this->Questions[$i][5+$this->Questions[$i][9]]//mc, it's 0-3 of WXYZ
+					:$ruleSet['MCChoices'][$this->Questions[$i][9]].') '.$this->Questions[$i][5+$this->Questions[$i][9]],//mc, it's 0-3 of WXYZ
+				$ruleSet['MCChoices'][$this->Questions[$i][9]]
 			),
 			$formatstr);
 		
@@ -205,7 +212,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	private function err($str){
 		err('qIO: '.$str);
 	}
-	private function user_err($str){throw new Exception($str);}//That's the best I can do, and then catch it outside. Ugh. How about... $qIO->err_status?
+	private function user_err($str){$error=$str;}
 	//Returns the size.
 	public function count(){
 		if(empty($this->Questions))return 0;return count($this->Questions);
@@ -219,12 +226,14 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 			$range=range(0,count($this->Questions)-1);
 			$this->updateIs(array_diff($range,$rated),'MarkBad=MarkBad+1');
 			$rated=$range;
-			return;
+			return $this;
 		}
 		
-		if(array_key_exists($i,$rated))return;//Don't re-rate it.
+		if(array_key_exists($i,$rated))return $this;//Don't re-rate it.
 		$database->query_assoc('UPDATE questions SET markBad=MarkBad+1 WHERE QID=%0% LIMIT 1',array($this->Questions[$i][0]));
 		$rated[$i]=true;
+		
+		return $this;
 	}
 	private function updateQIDs($qids,$setstr){
 		if(empty($this->Questions)||count($this->Questions)==0)return;

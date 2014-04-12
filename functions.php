@@ -18,6 +18,13 @@ At the top of each PRIVATE file
 
 USEFUL TIPS LIST:
 '\n' is just slash n; "\n" is newline.
+.htaccess files MUST have a newline at the end to work. For the matter, all files should. It just makes things work more properly.
+Never, ever, ever, EVER trust $_SERVER['REQUEST_URI']. Only for creating links, and extremely carefully for 
+	-e.g. counting the number of slashes to see how many directories you have to go up, using that for ROOT_PATH construction,
+	what if the attacker inserts extra random meaningless slashes, and designs the URL so that it accesses some system file?
+	And then we end up accessing and dumping the file? Well OOPS.
+Root path is horrible to determine dynamically.
+Before you do anything, READ config.php and its comments. Preferably also this file and its comments.
 */
 
 /****************LOGGING*******************/
@@ -27,7 +34,7 @@ function logfile($file,$str=NULL){
 	if($str!==NULL)$str=str_replace(["\n\n","\r\n\r\n"],"\r\n",strval($str)).' -- ';
 	
 	$log=$str.$_SERVER['REMOTE_ADDR'].' '.date('l, F j, Y h:i:s A').' '.$_SERVER['REQUEST_URI']."\r\n\r\n";
-	file_put_contents(__DIR__.'/logs/'.$file.'.log',"OINKTESTING".$log,FILE_APPEND);
+	file_put_contents(__DIR__.'/logs/'.$file.'.log',$log,FILE_APPEND);
 }
 logfile('req','Request');
 
@@ -58,7 +65,7 @@ HEREDOC;
 /****************INCLUDES******************/
 require_once 'conf/config.php';//Config.
 require_once 'classes/class.DB.php';//Safe, consistent (MySQL) databasing.
-$database=new DB;//Surprisingly, it's faster if we load it every page.
+$database=new DB($DB_SERVER,$DB_USERNAME,$DB_PASSWORD,$DB_DATABASE);//Surprisingly, it's faster if we load it every page.
 require_once 'accountManagement.php';//Account and session management.
 //also: DB, qIO, fileToStr, qParser, etc.
 function require_class(){
@@ -224,8 +231,9 @@ function templateify(){
 	
 	global $pagesTitles,$hiddenPagesTitles,$adminPagesTitles;
 	
-	$pagename=basename($_SERVER['REQUEST_URI'],'.php');
-	if($pagename==''||$pagename=='doeqs_simple')$pagename='index';
+	$pagename=basename($_SERVER['REQUEST_URI'],'.php');//--TODO-- needs to be full relative paths - e.g. classes/about.php not 404
+		//likewise, links in navbar must be absolute or relative to ROOT_PATH
+	if($pagename==''||$pagename=='doeqs_new')$pagename='index';
 	if(array_key_exists($pagename,$pagesTitles)){
 		$title=$pagesTitles[$pagename];
 		$content=ob_get_clean();
@@ -327,7 +335,7 @@ function fetch_alerts_html(){
 			if($alert[1]>0)$disposition='pos';
 			else if($alert[1]<0)$disposition='neg';
 			else $disposition='neut';
-			$html.="<div class='alert_{$disposition}'>".$alert[0].'</div>';
+			$html.="<div class='alert_{$disposition}'>{$alert[0]}</div>";
 		}
 		unset($_SESSION[$sp]);
 	}
@@ -354,5 +362,14 @@ function database_stats(){//Returns the database statistics as an HTML string.
 	return $ret;
 }
 
+function sendfile($contenttype,$ext,$content){
+	header("Content-type: $contenttype");
+	header('Content-disposition: attachment; filename="Export'.substr(hash('SHA1',mt_rand()),0,16).'.'.$ext.'"');
+	echo $content;
+	
+	global $CANCEL_TEMPLATEIFY;
+	$CANCEL_TEMPLATEIFY=true;
+	die();
+}
 
 ?>
