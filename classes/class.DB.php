@@ -252,6 +252,28 @@ final class DB{
 		return false;
 	}
 	
+	/*
+	SQL_RAND($primary_key)
+		Replaces "RAND()" with a better set of commands for SQL randomization.
+		Particularly adapted to "ORDER BY" clauses.
+		
+		$primary_key would optimally be the name of the unique column in the table, but if not available it works okay.
+		
+		I sort of know how this works, but not entirely.
+	*/
+	public function SQL_RAND($primary_key = 0){//Replaces SQL
+											//$primary_key is the name of the unique column in the table.
+		//Recommendation:	NEWID is for generating unique values, not for randomness. I think that's good enough.
+		//					RAND is just not random enough, plus it only executes once per query I think (O_o)
+		//					The primary key is guaranteed to be unique, so that's a reassurance.
+		//					mt_rand() is actually a good generator, but it doesn't generate new values;
+		//						i.e. the value is concatenated in PHP, so in SQL it will be always the same during sorting.
+		//						so it amounts to a salt right now.
+		//				And SHA1 just mixes it all together, and CONV makes it usable for sorting.
+		//				[MySQL seems to always use BIGINTs in arithmetic, so nothing should overflow.]
+		//It's slower but since question shuffling is the most important use of randomness in the system, it MUST work effectively.
+		return " SHA1(UUID()+RAND()+".$primary_key."+".mt_rand().") ";
+	}
 	
 	/*
 	err(string $str)

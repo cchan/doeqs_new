@@ -12,19 +12,19 @@
 
         <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 
-        <link rel="stylesheet" href="%root%/css/normalize.css">
-		<link rel="stylesheet" href="%root%/css/style.css"/>
+        <link rel="stylesheet" href="%root%css/normalize.css">
+		<link rel="stylesheet" href="%root%css/style.css"/>
 		
-        <script src="%root%/js/modernizr-2.6.2.min.js"></script>
+        <script src="%root%js/modernizr-2.6.2.min.js"></script>
     </head>
     <body class="noJQuery">
         <!--[if lt IE 7]>
             <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
         <![endif]-->
 
-		<form id="bugrept" action='%root%/bugs.php' method='POST'>
+		<form id="bugrept" action='%root%bugs.php' method='POST'>
 			<b>Bug Report/Feature Request:</b>
-			<img src='%root%/img/loadingCircle.gif' id='loadimg' style='display:none;width:100%;' alt='Loading...' />
+			<img src='%root%img/loadingCircle.gif' id='loadimg' style='display:none;width:100%;' alt='Loading...' />
 			<div id="thanksmessage" style="display:none;">Submitted! Thanks for the report; we'll be on it immediately.</div>
 			<div id="hidden">
 			<div class="text"><b>Tell us everything about the bug:</b> what happened and what should have, where, on what browser/system, how we might reproduce it, etc.</div>
@@ -39,7 +39,7 @@
 			<div id="nav-wrapper">%nav%</div>
 			<br>
 			<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-			<script>window.jQuery || document.write('<script src="%root%/js/jquery.min.js"><\/script>')</script>
+			<script>window.jQuery || document.write('<script src="%root%js/jquery.min.js"><\/script>')</script>
 			<script>$(function(){
 				$("#bugrept #hidden").hide();
 				$("#bugrept #clicker").text("[expand]").click(function(){

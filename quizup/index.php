@@ -1,5 +1,5 @@
 <?php
-define('ROOT_PATH','');
+define('ROOT_PATH','../');
 require_once ROOT_PATH.'functions.php';
 require_once ROOT_PATH.'classes/class.qIO.php';
 restrictAccess('u');//xuca

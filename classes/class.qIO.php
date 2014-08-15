@@ -11,7 +11,7 @@ DOCUMENTATION OF DATABASE
 /*
 class Question{
 	public $QID=0;
-	private $Question;
+	private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
 	public $committed = true;
 	
 	public function __construct($QID){
@@ -213,7 +213,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				$ruleSet['QTypes'][intval($this->Questions[$i][3])],
 				nl2br(strip_tags($this->Questions[$i][4])),
 				$this->Questions[$i][5],$this->Questions[$i][6],$this->Questions[$i][7],$this->Questions[$i][8],
-				(!$this->Questions[$i][3])?
+				(intval($this->Questions[$i][3]))?
 					strip_tags($this->Questions[$i][9])//short answer, just there
 					:$ruleSet['MCChoices'][$this->Questions[$i][9]].') '.$this->Questions[$i][5+$this->Questions[$i][9]],//mc, it's 0-3 of WXYZ
 				//$ruleSet['MCChoices'][$this->Questions[$i][9]]
