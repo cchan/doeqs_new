@@ -50,7 +50,8 @@ class fileToStr{
 	//pdfToText()
 	//Naturally, this one doesn't work either.
 	private function pdfToText($filename){
-		//The PDF2Text class is HUGE. Magical black box. See file for citations.
+		//The PDF2Text class is HUGE. Magical black box. See file for citations
+		require_once "class.pdf2text.php";
 		$a = new PDF2Text();
 		$a->setFilename($filename); 
 		$a->decodePDF();

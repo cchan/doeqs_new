@@ -1,16 +1,60 @@
-<div style="width:80%;border:solid 1px #000000;padding:20px;margin:20px auto;">
-	<h1>DOE Question Template Generator</h1>
-	<p>Based on the subjects-per-person given, generates a DOE questions template with question assignments.</p>
-	<small><i>requires JavaScript and JQuery and cookies to be enabled, which should be the default</i></small><br><br>
-	<table border=1><tr><th colspan=5>Example - 4 phys 5 chem</th><tr><td>Name:<td><input value="Henry Hsu" disabled/><td>Subjects:<td><input value="4p5c" disabled/><td>x</table><br>
-	<div id="subjdisplay"></div>
-	<table border=1 id='nsform'><tr><th colspan=5>Template Generator</th></table>
-	<button onclick="nsadd('','');">Add Another</button>
+<html>
+<head>
+<title>DOE Question Template Generator</title>
+<meta name="viewport" content="width=device-width">
+</head>
+<body style="font-family:Arial">
+<style>
+.main{
+width:85%;border:solid 1px #000000;padding:20px;margin:20px auto;
+}
+#subjdisplay{
+border:solid 1px black;padding:10px;
+}
+#nsform{
+width:100%;
+}
+#nsform input{
+width:90%;
+text-align:center;
+}
+#nsform td{
+text-align:center;
+}
+#addbtn{
+display:block;
+width:30px;height:30px;
+border-radius:30px;text-align:center;
+font-size:2em;
+padding:0px 0px 0px 0px;
+margin:0px auto;
+}
+.xbtn{
+font-weight:bold;
+color:red;
+}
+.xbtn:hover{
+cursor:pointer;
+}
+
+</style>
+<div class='main'>
+	<h2>DOE Question Template Generator</h2>
+	<small>Based on the subjects-per-person given, generates a DOE questions template with question assignments.</small>
+	<br><br>
+	<div id="subjdisplay"><b>Subject Key:</b><br></div>
+	<br>
+	<table id='nsform'>
+		<tr id='nstitle'><th>Name<th><th>Subject<th>
+		<tr><td><td><button class='addbtn' onclick="nsadd('','');">+</button><td><td>
+	</table>
+	<div style="text-align:center;width:100%;"></div>
+	<br>
 	<button onclick="genTemplate();generateLink();saveQCookie();selTemplate();">Generate Template</button>
-	<button onclick="selTemplate();">Select Template</button><br>
-	Permalink: <a id="doclink" href=""></a><br><br>
-	<div id="html" style="border:solid 1px #000000;"><center>template to be here</center></div>
+	<div style="max-width:100%;">Permalink: <a id="doclink" href="">(n/a)</a></div><br><br>
+	<div id="html" style="border:solid 1px #000000;" onclick="selTemplate();"><center style="font-style:italic;">template to be here</center></div>
 </div>
+<div style="width:60%;color:white;background-color:black;border-radius:100px;margin:20px auto;text-align:center;font-weight:bold;">&copy;2014 LHS Scibowl</div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js">\x3C/script>')</script>
@@ -19,9 +63,9 @@
 /******CONFIG******/
 var SUBJTRANSLATE={b:"BIOLOGY",c:"CHEMISTRY",p:"PHYSICS",m:"MATH",e:"EARTH AND SPACE SCIENCE",n:"ENERGY"};
 /******ENDCNF******/
-for(var i in SUBJTRANSLATE)$('#subjdisplay').append(i+'='+SUBJTRANSLATE[i]+'; ');
+for(var i in SUBJTRANSLATE)$('#subjdisplay').append(i+'='+SUBJTRANSLATE[i]+'<br>');
 
-function nsadd(n,s){$('#nsform').append('<tr><td>Name:<td><input class="name" value="'+htmlentities(n)+'"/><td>Subjects:<td><input class="subj" value="'+htmlentities(s)+'"/><td onclick="$(this).parents(\'tr\').remove();">x');}
+function nsadd(n,s){$('#nstitle').after('<tr><td><input class="name" value="'+htmlentities(n)+'"/><td><td><input class="subj" value="'+htmlentities(s)+'"/><td class="xbtn" onclick="$(this).parents(\'tr\').remove();">x');}
 function selTemplate(){
 	if(window.getSelection())window.getSelection().selectAllChildren(document.getElementById('html'));
 	else alert("Your browser doesn't support selection properly D: You can probably just manually select the entire document and that'll do just fine.");
@@ -55,7 +99,7 @@ function genTemplate(){
 	var x=["TOSS-UP","BONUS"];
 	for(var i=0;i<qarr.length;i++)for(var j=0;j<x.length;j++)
 		fullhtml+="<p style='text-align:center;font-weight:bold;'>"+x[j]+"</p>"
-			+"<div style='font-weight:normal;'>"+i+") "+htmlentities(qarr[i][0])+" <i>Question Type</i> "+htmlentities(qarr[i][1])+"</div>"
+			+"<div style='font-weight:normal;'>"+(i+1)+") "+htmlentities(qarr[i][0])+" <i>Question Type</i> "+htmlentities(qarr[i][1])+"</div>"
 			+"<div style='font-weight:normal;'>ANSWER:&nbsp;</div>";
 	$("#html").html(fullhtml+"<br>");
 }
@@ -78,6 +122,11 @@ for(var i=0;i<a.length;i++){var x=a[i].split('=');if(!x[0]||!x[1])continue;getar
 if(getarr){for(var key in getarr)if(getarr.hasOwnProperty(key))nsarr.push([key,getarr[key]]);}
 else if((nsarr=$.cookie("qcook")).length==0)nsarr=[['','']];
 for(var i=0;i<nsarr.length;i++)nsadd(nsarr[i][0],nsarr[i][1]);
-
-generateLink();
+if(nsarr.length==0)nsadd('','');
+else{
+	genTemplate();
+	generateLink();
+}
 </script>
+</body>
+</html>

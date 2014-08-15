@@ -8,6 +8,34 @@ DOCUMENTATION OF DATABASE
 --todo-- fill this out
 */
 
+/*
+class Question{
+	public $QID=0;
+	private $Question;
+	public $committed = true;
+	
+	public function __construct($QID){
+		
+	}
+	
+	public function //[that catcher thingy]
+	{
+		if($funcname in $QUESTION_FORM)
+			if($param1)$Q[$funcname]=$param1;
+			else return $Q[$funcname];
+	}
+	
+	
+	public function loadQID($QID){
+		
+	}
+	public function toHTML(){
+		
+	}
+	public function commit(){
+		
+	}
+}*/
 
 class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	//private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
@@ -50,7 +78,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		}
 		//NOTE that TimesViewed is despite categories, and if you have something like 2 10 10 10, you'll get the 2 at least 8 times in a row.
 			//The assumption that there is a large pool for _each_ possible classification (2*5*2=20 of them) eliminates this problem.
-		$query.=" ORDER BY ". /*"TimesViewed ASC, ".*/ "RAND() LIMIT $num";//Order by TimesViewed, and then randomize within each TimesViewed value.
+		$query.=" ORDER BY ". /*"TimesViewed ASC, ".*/ $database->SQL_RAND('QID')." LIMIT $num";//Order by TimesViewed, and then randomize within each TimesViewed value.
 		$result=$database->query($query);
 		
 		if($result->num_rows==0)$this->user_err("No such questions exist.");
@@ -136,7 +164,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		return $this;
 	}
 	
-	//Generally doesn't need to be used.
+	//Generally doesn't need to be used. (works automatically)
 	public function commit(){
 		if(empty($this->Questions)||count($this->Questions)==0)return $this;
 		global $database,$ruleSet;
@@ -185,10 +213,10 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				$ruleSet['QTypes'][intval($this->Questions[$i][3])],
 				nl2br(strip_tags($this->Questions[$i][4])),
 				$this->Questions[$i][5],$this->Questions[$i][6],$this->Questions[$i][7],$this->Questions[$i][8],
-				($this->Questions[$i][3])?
+				(!$this->Questions[$i][3])?
 					strip_tags($this->Questions[$i][9])//short answer, just there
 					:$ruleSet['MCChoices'][$this->Questions[$i][9]].') '.$this->Questions[$i][5+$this->Questions[$i][9]],//mc, it's 0-3 of WXYZ
-				$ruleSet['MCChoices'][$this->Questions[$i][9]]
+				//$ruleSet['MCChoices'][$this->Questions[$i][9]]
 			),
 			$formatstr);
 		

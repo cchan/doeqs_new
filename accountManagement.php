@@ -233,6 +233,14 @@ function saltyStretchyHash($pass,$salt){//WAAAY overdoing it. Messing with any s
 	usleep(mt_rand(0,10000));//Messing up timing attacks :P
     return $hash;
 }
+/*From MySQL Docs:
+Passwords or other sensitive values supplied as arguments to encryption functions are sent in plaintext
+ to the MySQL server unless an SSL connection is used. Also, such values will appear in any MySQL logs
+ to which they are written. To avoid these types of exposure, applications can encrypt sensitive values
+ on the client side before sending them to the server. The same considerations apply to encryption keys.
+ To avoid exposing these, applications can use stored procedures to encrypt and decrypt values on the server side.
+Therefore, always use PHP-side hashing unless it doesn't matter cryptographically. (we don't use SSL, unfortunately, shhhhh)
+ */
 
 /*
 newProfileError

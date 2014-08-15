@@ -318,14 +318,14 @@ function alert($text,$disposition=0,$page_name=NULL){
 	//Check that it's a valid page.
 	
 	if(is_null($page_name))
-		$page_name=basename($_SERVER['REQUEST_URI']);
+		$page_name='';//basename($_SERVER['REQUEST_URI']);
 	$sp='alerts_'.$page_name;
 	
 	if(!sessioned($sp))$_SESSION[$sp]=array();
 	$_SESSION[$sp][]=[$text,$disposition];
 }
 function fetch_alerts_html(){
-	$page_name=basename($_SERVER['REQUEST_URI']);
+	$page_name='';//basename($_SERVER['REQUEST_URI']);
 	$sp='alerts_'.$page_name;
 	
 	$html='';

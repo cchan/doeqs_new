@@ -7,12 +7,11 @@ Any configuration stuff.
 */
 
 
-$DEBUG_MODE=false;//True if want lots of debug output. False on real production to hide everything.
+$DEBUG_MODE=true;//True if want lots of debug output. False on real production to hide everything.
 
 $SERVER_DOWN=false;//Teapot on every page if it's true. See top of functions.php. :)
 
 $USER_LOGIN_REQUIRED=false;
-
 /**********************METADATA*********************/
 $VERSION_NUMBER='0.2.2';
 $WEBMASTER_EMAIL='moose54321@gmail.com';
@@ -38,7 +37,7 @@ ini_set('safe_mode_gid',true);
 /***********************DOEQS************************/
 $ruleSet=array(//...to be honest, this is annoying.
 	"Subjects"=>array("BIOLOGY","CHEMISTRY","PHYSICS","MATHEMATICS","EARTH AND SPACE SCIENCE"),
-	"SubjRegex"=>'(BIO(?:LOGY)?|CHEM(?:ISTRY)?|PHYS(?:|ICS|ICAL SCIENCE)|MATH(?:EMATICS)?|E(?:SS|ARTHSCI|ARTH SCIENCE|ARTH (?:AND|&) SPACE(?: SCIENCE)?))',
+	"SubjRegex"=>'(BIO(?:LOGY)?|CHEM(?:ISTRY)?|PHYS(?:ICS|ICAL(?: SCIENCE)?)?|MATH(?:EMATICS)?|E(?:SS)?(?:ARTH)? ? ?(?:AND)? ?(?:SPACE)? ?(?:SCI(?:ENCE)?)?)',
 	"QTypes"=>array("Multiple Choice","Short Answer"),
 	"QParts"=>array("TOSS-UP","BONUS"),
 	"MCChoices"=>array("W","X","Y","Z"),
