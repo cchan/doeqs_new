@@ -10,10 +10,10 @@ Input of questions into the database.
 
 $unparsed='';
 
-if(csrfVerify()&&(posted("copypaste")||isSet($_FILES["fileupload"])||posted("directentry"))){
+if(csrfVerify()&&(posted("copypaste")||filed("fileupload")||posted("directentry"))){
 	echo '<div style="font-size:0.8em;border:solid 1px #000000;display:inline-block;padding:5px;">
 		<i>We are processing your questions right now...</i><br><br>';
-	if(isSet($_POST["directentry"])){
+	if(posted("directentry")){
 		$err='';
 		try{$q=new qIO();$q->addByArray($_POST["Q"]);$q->commit();}
 		catch(Exception $e){$err="Error: ".$e->getMessage();}
@@ -28,21 +28,21 @@ if(csrfVerify()&&(posted("copypaste")||isSet($_FILES["fileupload"])||posted("dir
 		if(posted("copypaste")){
 			$unparsed=$qp->parse($_POST["copypaste"]);
 		}
-		elseif(isSet($_FILES["fileupload"])){
+		elseif(filed("fileupload")){
 			require_class("fileToStr");
 			$fs=new fileToStr();
 			if(is_array($_FILES["fileupload"]["tmp_name"])){//for multiple-supporting browsers
 				foreach($_FILES["fileupload"]["tmp_name"] as $ind=>$tmp_name){
 					$name=$_FILES["fileupload"]["name"][$ind];
 					echo "File $name: ";
-					if($name==''||$tmp_name==''){error("No file.");$error=true;continue;}
+					if($name==''||$tmp_name==''){err("No file.");$error=true;continue;}
 					$unparsed.=$qp->parse($fs->convert($name,$tmp_name));
 					echo "<br>";
 				}
 			}
 			else $unparsed=$qp->parse($fs->convert($_FILES["fileupload"]["name"],$_FILES["fileupload"]["tmp_name"]));
 		}
-		else{error("Invalid form input");$error=true;}
+		else{err("Invalid form input");$error=true;}
 		if($error==false)
 			if(str_replace(array("\n","\r"," ","	","_"),'',$unparsed)!='')
 				echo "<br><br>Below, in the copy-paste section, are what remains in the document after detecting all the questions we could find.<br>";

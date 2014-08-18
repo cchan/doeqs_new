@@ -6,6 +6,8 @@ Contains powerful question-interface class qIO.
 
 DOCUMENTATION OF DATABASE
 --todo-- fill this out
+
+refactor "isB" "isSA" => hm
 */
 
 /*
@@ -14,7 +16,7 @@ class Question{
 	private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
 	public $committed = true;
 	
-	public function __construct($QID){
+	public function __construct(){
 		
 	}
 	
@@ -25,11 +27,16 @@ class Question{
 			else return $Q[$funcname];
 	}
 	
+	public function loadArr($arr){
 	
+	}
 	public function loadQID($QID){
 		
 	}
 	public function toHTML(){
+		
+	}
+	public function update(){
 		
 	}
 	public function commit(){
@@ -54,111 +61,96 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		$this->Questions=array();
 		return $this;
 	}
-	public function addRand($parts,$subjects,$types,$num){//arrays of the numbers to include eg subj [0,1,4] for b,c,e
-		global $database, $MARK_AS_BAD_THRESHOLD, $ruleSet, $MAX_NUMQS;
+	public function addQResult($qresult){
+		while($row=$qresult->fetch_assoc())
+			$this->addAssocArr($row);
+	}
+	public function addAssocArr($qarr){
+		$this->Questions[]=array($qarr['QID'],$qarr['isB'],$qarr['Subject'],$qarr['isSA'],
+			$qarr['Question'],$qarr['MCW'],$qarr['MCX'],$qarr['MCY'],$qarr['MCZ'],
+			$qarr['Answer']);
+	}
+	public function addRand($QParts,$Subjects,$QTypes,$num){//arrays of the numbers to include eg subj [0,1,4] for b,c,e
+		global $MARK_AS_BAD_THRESHOLD, $ruleSet, $MAX_NUMQS, $DEFAULT_NUMQS;
 		
-		if(!val_int($num))$num=$DEFAULT_NUMQS;
-		$num=normRange(intval($num),1,$MAX_NUMQS);
+		$num=normRange($num,1,$MAX_NUMQS,$DEFAULT_NUMQS);
 		
-		$query="SELECT QID, isB, Subject, isSA, Question, MCW, MCX, MCY, MCZ, Answer FROM questions WHERE MarkBad < $MARK_AS_BAD_THRESHOLD AND Deleted=0";
-		$stuff=array("QParts"=>$parts,"Subjects"=>$subjects,"QTypes"=>$types);
-		$counts=array("QParts"=>count($ruleSet["QParts"]),"Subjects"=>count($ruleSet["Subjects"]),"QTypes"=>count($ruleSet["QTypes"]));
-		$dbname=array("QParts"=>"isB","Subjects"=>"Subject","QTypes"=>"isSA");
-		$checkboxoptions='';
-		foreach($counts as $name=>$howmany){
-			if(!is_array($stuff[$name]))continue;
-			$stuff[$name]=array_values(array_unique($stuff[$name]));
-			if(count($stuff[$name])<$howmany && count($stuff[$name])>0){
-				$query.=' AND (';
-				for($i=0;$i<count($stuff[$name]);$i++)
-					if($stuff[$name][$i]>=0&&$stuff[$name][$i]<$howmany)//if it's not absolutely valid go away
-						$query.=$dbname[$name].'='.$stuff[$name][$i].' OR ';
-				$query=substr($query,0,-4).')';
-			}
+		$where = new WhereClause('and');
+		$where->add('MarkBad<%i',$MARK_AS_BAD_THRESHOLD);
+		$where->add('Deleted=0');
+		
+		$db=array("isB","Subject","isSA");
+		foreach(array("QParts","Subjects","QTypes") as $i=>$name){
+			if(!val('*i+',$indices=eval('$'.$name.';')))continue;//Fetches and verifies array of index values that the user may want.
+			$indices=array_values(array_unique($indices));//Eliminates stupidity
+			
+			$sub = $where->addClause('or');
+			foreach($indices as $index)
+				if(inRange($index,0,count($ruleSet[$name])-1))//Make sure the index is correct.
+					$sub->add('%b=%i',$db[$i],$index);//Inserts the index into the proper DB field
 		}
-		//NOTE that TimesViewed is despite categories, and if you have something like 2 10 10 10, you'll get the 2 at least 8 times in a row.
+		$qresult=DB::queryRaw("SELECT * FROM questions WHERE %l ORDER BY TimesViewed ASC, ".SQLRAND('QID')." LIMIT %i", $where, $num);
+		
+		//Order by TimesViewed, and then randomize within each TimesViewed value.
+		//NOTE: TimesViewed is despite categories, and if you have something like 2 10 10 10, you'll get the 2 at least 8 times in a row.
 			//The assumption that there is a large pool for _each_ possible classification (2*5*2=20 of them) eliminates this problem.
-		$query.=" ORDER BY ". /*"TimesViewed ASC, ".*/ $database->SQL_RAND('QID')." LIMIT $num";//Order by TimesViewed, and then randomize within each TimesViewed value.
-		$result=$database->query($query);
 		
-		if($result->num_rows==0)$this->user_err("No such questions exist.");
+		if($qresult->num_rows!=$num)$this->user_err("Not enough such questions exist.");
+		$this->addQResult($qresult);
 		
-		$i=count($this->Questions);
-		while($row=$result->fetch_assoc()){
-			$this->Questions[]=array($row["QID"],$row["isB"],$row["Subject"],$row['isSA'],
-				$row["Question"],$row["MCW"],$row["MCX"],$row["MCY"],$row["MCZ"],$row['Answer']);
-		}
-		$this->updateIs(range($i,count($this->Questions)-1),"TimesViewed=TimesViewed+1");//--todo-- do this in user-specific storage instead.
-		if($result->num_rows!=$num)$this->user_err("More questions requested than such questions exist.");
+		$this->updateIs(range(count($this->Questions)-$num,count($this->Questions)-1),"TimesViewed=TimesViewed+1");//--todo-- do this in user-specific storage instead.
 		
 		return $this;
 	}
 	public function addByQID($qids){
-		global $database;
-		if(!is_array($qids))$this->err('not array');
+		if(!is_array($qids))$this->err('QIDs not array');
 		
-		$query="SELECT QID, isB, Subject, isSA, Question, MCW, MCX, MCY, MCZ, Answer FROM questions WHERE (";
-		foreach($qids as $i=>$qid){
-			if(!val_int($qid)||intval($qid)<=0)$this->user_err("Invalid QID $qid.");
-			$query.=" QID=".intval($qid)." OR ";
-		}
-		$query.=" 0) AND Deleted=0 LIMIT ".count($qids);
+		$where = new WhereClause('and');
+		foreach($qids as $qid)
+			if(!val('i+',$QID))continue;//Invalid QID.
+			else $where->add('QID=',$qid);
+		$where->add('Deleted=0');
+		
+		$qresult=DB::queryRaw('SELECT * FROM questions WHERE %l LIMIT %i',$where,count($qids));
+		if($qresult->num_rows<count($qids))$this->user_err('Some QIDs do not exist.');//--todo-- but cannot continue execution
 		
 		$this->updateQIDs($qids,"TimesViewed=TimesViewed+1");
-		
-		$result=$database->query($query);
-		if($result->num_rows<count($qids))$this->user_err('Some QIDs do not exist.');
-		
-		while($row=$result->fetch_assoc()){
-			$this->Questions[]=array($row['QID'],$row['isB'],$row['Subject'],$row['isSA'],
-				$row['Question'],$row['MCW'],$row['MCX'],$row['MCY'],$row['MCZ'],$row['Answer']);
-		}
+		$this->addQResult($qresult);
 		
 		return $this;
 	}
-	public function addByArray($paramsArray){//Add to the array of questions, each from array or ID.
+	public function addByArray($qarrArray){//Add to the array of questions, using an array of $qarr
 		global $ruleSet;
-		global $database;
-		global $DEFAULT_QUESTION_TEXT,$DEFAULT_ANSWER_TEXT;
 		
-		if(is_null($paramsArray))$this->err('addByArray: No parameters');
-		elseif(!is_array($paramsArray))$this->err('addByArray: Invalid input params');
+		if(!val('**s',$qarrArray))$this->err('addByArray: Invalid input');
+		//The structure is an array of associative ("isB","Question","Answer",...) arrays
 		
-		foreach($paramsArray as $n=>$params){
-			if(!is_array($params))$this->err('addByArray: Wrong parameter type.');//Given all the needed parameters in an array.
-			
-			$required=['isB','Subject','isSA','Question'];
-			//$types=[[0,1],range(0,count($ruleSet['Subjects'])),[0,1],'','','','','','',''];
-			if(count(array_intersect_key(array_flip($required),$params))!=count($required))$this->err('addByArray: Missing parameters.');
+		foreach($qarrArray as $qarr){
+			if(!arrayKeysNotEmpty($qarr,array('isB','Subject','isSA','Question')))$this->err('addByArray: Missing parameters');
 			
 			//Check the validity of these.
 			//Handle JS-side too...
-			$params['isB']=($params['isB']==1);
-			if(!val_int($params['Subject'])||!array_key_exists($params['Subject'],$ruleSet['Subjects']))$this->user_err('Invalid subject');
-			$params['isSA']=($params['isSA']==1);
-			if($params['Question']=='')$this->user_err('Blank question');
+			$qarr['isB']=($qarr['isB']==1);
+			if(!array_key_exists($qarr['Subject'],$ruleSet['Subjects']))$this->user_err('Invalid subject');
+			$qarr['isSA']=($qarr['isSA']==1);
+			if($qarr['Question']=='')$this->user_err('Blank question');
 			
 			//Deal with MC vs SA answers
-			if(!$params['isSA']){
-				$required=['MCW','MCX','MCY','MCZ','MCa'];
-				if(count(array_intersect_key(array_flip($required),$params))!=count($required))$this->err('Missing parameters.');
-				for($i=0;$i<count($ruleSet['MCChoices']);$i++)
-					if(empty($params['MC'.$ruleSet['MCChoices'][$i]]))
-						$this->user_err('Some multiple choice blank');
-				if(!(array_key_exists('MCa',$params)&&is_int($params['MCa'])&&array_key_exists($params['MCa'],$ruleSet['MCChoices'])))
+			if(!$qarr['isSA']){
+				if(!arrayKeysNotEmpty($qarr,array('MCW','MCX','MCY','MCZ','MCa')))$this->err('Missing parameters.');
+				if(!(array_key_exists($qarr['MCa'],$ruleSet['MCChoices'])))//Relies on the fact that $arr[1]==$arr['1']
 					$this->user_err('Invalid MC answer chosen');
-				$params['Answer']=$params['MCa'];
+				$qarr['Answer']=$qarr['MCa'];//If it's an MC, the answer stored is 0,1,2,3 for W,X,Y,Z
 			}else{
-				if(!array_key_exists('Answer',$params))$this->err('Missing parameters.');
-				if($params['Answer']=='')$this->user_err('Blank answer');
-				$params['MCW']=$params['MCX']=$params['MCY']=$params['MCZ']=NULL;
+				if(!array_key_exists('Answer',$qarr))$this->err('Missing parameters.');
+				if($qarr['Answer']=='')$this->user_err('Blank answer');
+				$qarr['MCW']=$qarr['MCX']=$qarr['MCY']=$qarr['MCZ']=NULL;
 			}
 			
-			//var_dump($params);
+			//var_dump($qarr);
 			//Hm. Start value for QID = 0.
-			$this->Questions[]=array(0,$params['isB'],$params['Subject'],$params['isSA'],
-				$params['Question'],$params['MCW'],$params['MCX'],$params['MCY'],$params['MCZ'],
-				$params['Answer']);
+			$qarr['QID']=0;
+			$this->addAssocArr($qarr);
 		}
 		
 		return $this;
@@ -166,27 +158,31 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	
 	//Generally doesn't need to be used. (works automatically)
 	public function commit(){
-		if(empty($this->Questions)||count($this->Questions)==0)return $this;
-		global $database,$ruleSet;
-		$q='INSERT INTO questions (isB, Subject, isSA, Question, MCW, MCX, MCY, MCZ, Answer) VALUES ';//Set up query string. The max query length is something like 16MB so no probs there
-		$valarr=array();//array of values to be submitted to and sanitized by $database->query
+		global $ruleSet;
+		
+		$rows=array();
 		foreach($this->Questions as $qarr){
-			//isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
-			if($qarr[0]!=0)continue;//only commit non-committed new ones.
-			array_shift($qarr);//get rid of QID
-			$q.='(%'.implode('%,%',range(count($valarr),count($valarr)+count($qarr)-1)).'%),';//add the (%1%,%2%,%3%,...),(...),...
-			$valarr=array_merge($valarr,$qarr);//put it into the values array
+			if($qarr[0]!=0)continue;//only commit non-committed new ones, which have default QID 0.
+			$rows[]=array(
+				'isB'=>$qarr[1],'Subject'=>$qarr[2],'isSA'=>$qarr[3],
+				'Question'=>$qarr[4],
+				'MCW'=>$qarr[5],'MCX'=>$qarr[6],'MCY'=>$qarr[7],'MCZ'=>$qarr[8],
+				'Answer'=>$qarr[9]
+			);
 		}
-		if(count($valarr)==0)$this->err('commit: No questions.');//if there weren't any questions to commit
+		if(count($rows)==0)return $this;//if there weren't any questions to commit
 		
-		$database->query_assoc(substr($q,0,-1),$valarr);//Query the db with all necessary stuff, stripping off the last comma
+		DB::insert('questions',$rows);
+		
 		for($i=0;$i<count($this->Questions);$i++)//For every question, get its inserted id
-			$this->Questions[$i][0]=$database->insert_id+$i;//Set QIDs; adding $i because it only returns the first insert_id, and it's almost certainly consecutive
+			$this->Questions[$i][0]=DB::insertId+$i;//Set QIDs; adding $i because it only returns the first insert_id, and it's almost certainly consecutive
+													//With Meekro it almost certainly still does so.
 		
-		//:( duplicates
+		//:( duplicate questions???
 		//http://stackoverflow.com/questions/18932/how-can-i-remove-duplicate-rows no idea what it does
-		//$database->query_assoc('UPDATE questions SET Deleted=1 WHERE QID NOT IN (SELECT MIN(QID) FROM questions WHERE Deleted=0 GROUP BY Question)');
-		//--todo--so how to do this for our php copy of the questions?
+		DB::query('UPDATE questions SET Deleted=1 WHERE QID NOT IN (SELECT MIN(QID) FROM questions WHERE Deleted=0 GROUP BY Question)');
+		
+		return $this;
 	}
 	
 	public function toHTML($i,$formatstr){//Return nice HTML for question $i, based on $formatstr replacements.
@@ -194,6 +190,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		global $ruleSet;
 		$MCOptions='';
 		//QID,isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
+		//static $x=false;if(!$x){$x=true;var_dump($this->Questions);}
 		return str_replace(
 			array(
 				'%N%',
@@ -202,7 +199,10 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				'%SUBJECT%',
 				'%TYPE%',
 				'%QUESTION%',
-				'%W%','%X%','%Y%','%Z%',//--todo-- make this extensible to non-WXYZ somehow
+				'%W%',
+				'%X%',
+				'%Y%',
+				'%Z%',//--todo-- make this extensible to non-WXYZ somehow
 				'%ANSWER%','%ANSCHOICE%'
 			),
 			array(
@@ -212,7 +212,10 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				$ruleSet['Subjects'][intval($this->Questions[$i][2])],
 				$ruleSet['QTypes'][intval($this->Questions[$i][3])],
 				nl2br(strip_tags($this->Questions[$i][4])),
-				$this->Questions[$i][5],$this->Questions[$i][6],$this->Questions[$i][7],$this->Questions[$i][8],
+				(intval($this->Questions[$i][3]))?'':$this->Questions[$i][5],
+				(intval($this->Questions[$i][3]))?'':$this->Questions[$i][6],
+				(intval($this->Questions[$i][3]))?'':$this->Questions[$i][7],
+				(intval($this->Questions[$i][3]))?'':$this->Questions[$i][8],
 				(intval($this->Questions[$i][3]))?
 					strip_tags($this->Questions[$i][9])//short answer, just there
 					:$ruleSet['MCChoices'][$this->Questions[$i][9]].') '.$this->Questions[$i][5+$this->Questions[$i][9]],//mc, it's 0-3 of WXYZ
@@ -223,7 +226,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		//--todo--test xss
 	}
 	public function allToHTML($formatstr){//Return nice HTML
-		if(empty($this->Questions)||count($this->Questions)==0)return '';
+		if(empty($this->Questions)||count($this->Questions)==0)return 'No questions selected';
 		$ret='';
 		for($i=0;$i<count($this->Questions);$i++)$ret.=$this->toHTML($i,$formatstr);
 		return $ret;
@@ -240,14 +243,13 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	private function err($str){
 		err('qIO: '.$str);
 	}
-	private function user_err($str){$error=$str;}
+	private function user_err($str){$this->error=$str;}
 	//Returns the size.
 	public function count(){
 		if(empty($this->Questions))return 0;return count($this->Questions);
 	}
 	
 	public function markBad($i=-1){//Rate question $i. Default rate all.
-		global $database;
 		static $rated=array();
 		
 		if($i===-1){//Default action: update ALL.
@@ -258,7 +260,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		}
 		
 		if(array_key_exists($i,$rated))return $this;//Don't re-rate it.
-		$database->query_assoc('UPDATE questions SET markBad=MarkBad+1 WHERE QID=%0% LIMIT 1',array($this->Questions[$i][0]));
+		DB::query('UPDATE questions SET markBad=MarkBad+1 WHERE QID=%i LIMIT 1',$this->Questions[$i][0]);
 		$rated[$i]=true;
 		
 		return $this;
@@ -266,32 +268,27 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	private function updateQIDs($qids,$setstr){
 		if(empty($this->Questions)||count($this->Questions)==0)return;
 		//$setstr is risky.
-		global $database;
-		$wherestr='';
+		
+		$where=new WhereClause('or');
 		foreach($qids as $qid)
-			$wherestr.=" QID=$qid OR ";
-		$wherestr=substr($wherestr,0,-3);
-		$query="UPDATE questions SET $setstr WHERE ($wherestr) LIMIT ".count($this->Questions);
-		$database->query_assoc($query);
+			$where->add("QID=%i",$qid);
+		DB::query("UPDATE questions SET $setstr WHERE (%l) LIMIT %i",$where,count($this->Questions));
 	}
 	private function updateIs($is,$setstr){
 		if(empty($this->Questions)||count($this->Questions)==0)return;
 		//$setstr is risky.
-		global $database;
-		$wherestr='';
+		$where=new WhereClause('or');
 		foreach($is as $i)
-			$wherestr.=' QID='.$this->Questions[$i][0].' OR ';
-		$wherestr=substr($wherestr,0,-3);
-		$query="UPDATE questions SET $setstr WHERE ($wherestr) LIMIT ".count($this->Questions);
-		$database->query($query);
+			$where->add("QID=%i",$this->Questions[$i][0]);
+		DB::query("UPDATE questions SET $setstr WHERE (%l) LIMIT %i",$where,count($this->Questions));
 	}
 };
 function getExportSize(){
-	$a=$database->query_assoc('SELECT COUNT(*) FROM questions WHERE Deleted=0');
-	return 'Estimated size: '.($a[0]/5).'KB';//about 5000 chars estimated per question. Eh.
+	$a=DB::queryFirstField('SELECT COUNT(*) FROM questions WHERE Deleted=0');//Not including deleted ones!
+	return 'Estimated size: '.($a/3).'KB';//about 3000 bytes estimated per question. Eh.
 }
 function exportQuestionsCSV(){
-	$database->query_assoc("SELECT * INTO OUTFILE 'questionsExport.csv' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\r\n' FROM questions WHERE Deleted=0");
+	DB::query("SELECT * INTO OUTFILE 'questionsExport.csv' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\r\n' FROM questions WHERE Deleted=0");
 }
 
 ?>

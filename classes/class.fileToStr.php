@@ -15,7 +15,7 @@ class fileToStr{
 			case "odt": return $this->odtToText($filepath);
 			case "pdf": return $this->pdfToText($filepath);
 			//case "csv"://really awk case. Plus not sanitized. D:
-			//$database->query_assoc("LOAD DATA INFILE '%0%' INTO TABLE questions FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\r\n' IGNORE 1 LINES",($_FILE["file"]["tmp_name"]));
+			//DB::query("LOAD DATA INFILE '%0%' INTO TABLE questions FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\r\n' IGNORE 1 LINES",($_FILE["file"]["tmp_name"]));
 			
 			default:
 				echo "Unsupported file extension <i>$ext</i> - we currently support txt, html, doc, docx, odt, pdf.";

@@ -3,18 +3,11 @@
 functions.php
 Any useful functions, and lots of includes. Main codebase.
 
-//--todo-- make consistent 404s
-
 INCLUSION NOTE:
 At the top of each USER-ACCESSIBLE file
-	define('ROOT_PATH','');
+	define('ROOT_PATH',''); //including final slashes, except when empty. (e.g. classes/, ../)
 	require_once ROOT_PATH.'functions.php';
 	restrictAccess('x');//xuca
-[restrictAccess is optional if any-accessible]
-At the top of each NON USER-ACCESSIBLE INCLUDEABLE file
-*/	if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}/*
-At the top of each PRIVATE file
-	header('HTTP/1.0 404 Not Found');die();
 
 USEFUL TIPS LIST:
 '\n' is just slash n; "\n" is newline.
@@ -25,53 +18,68 @@ Never, ever, ever, EVER trust $_SERVER['REQUEST_URI']. Only for creating links, 
 	And then we end up accessing and dumping the file? Well OOPS.
 Root path is horrible to determine dynamically.
 Before you do anything, READ config.php and its comments. Preferably also this file and its comments.
+:( if no error shows up it might be that you're require-ing a file that doesn't exist, or which is having a parse error. Check for parse errors at http://www.piliapp.com/php-syntax-check/
+Note that most versions of PHP (as of now) don't support [1,2,3] array literals. You must use array(1,2,3).
 */
 
-/****************LOGGING*******************/
-function logfile($file,$str=NULL){
-	$file=preg_replace("/[^A-Z0-9]/i",'',stripslashes(strval($file)));
-	
-	if($str!==NULL)$str=str_replace(["\n\n","\r\n\r\n"],"\r\n",strval($str)).' -- ';
-	
-	$log=$str.$_SERVER['REMOTE_ADDR'].' '.date('l, F j, Y h:i:s A').' '.$_SERVER['REQUEST_URI']."\r\n\r\n";
-	file_put_contents(__DIR__.'/logs/'.$file.'.log',$log,FILE_APPEND);
-}
-logfile('req','Request');
+require_once 'conf/config.php';//Config.
 
+require_once 'classes/meekrodb.2.3.class.php';//Precisely just a more complex and secure version of my own DB class :(
+DB::$host = $DB_SERVER;
+DB::$user = $DB_USERNAME;
+DB::$password = $DB_PASSWORD;
+DB::$dbName = $DB_DATABASE;
+//DB::$throw_exception_on_error=true;DB::$throw_exception_on_nonsql_error=true;
+
+function SQLRAND($primary_key = 0){//Replaces SQL's terrible RAND function. Does it have enough entropy?
+										//$primary_key is the name of the unique column in the table.
+	//Recommendation:	NEWID is for generating unique values, not for randomness. I think that's good enough.
+	//					RAND is just not random enough, plus it only executes once per query I think (O_o)
+	//					The primary key is guaranteed to be unique, so that's a reassurance.
+	//					mt_rand() is actually a good generator, but it doesn't generate new values;
+	//						i.e. the value is concatenated in PHP, so in SQL it will be always the same during sorting.
+	//						so it amounts to a salt right now.
+	//				And SHA1 just mixes it all together, and CONV makes it usable for sorting.
+	//				[MySQL seems to always use BIGINTs in arithmetic, so nothing should overflow.]
+	//It's slower but since question shuffling is the most important use of randomness in the system, it MUST work effectively.
+	return " SHA1(UUID()+RAND()+".$primary_key."+".mt_rand().") ";
+}
+
+require_once 'accountManagement.php';//Account and session management.
+
+//qIO, fileToStr, qParser, etc.
+function require_class(){
+	foreach(func_get_args() as $class_name)
+		if(val('f',$class_name)&&file_exists(ROOT_PATH.'classes/class.'.$class_name.'.php'))
+			{require_once ROOT_PATH.'classes/class.'.$class_name.'.php';}
+		else
+			err('bad Require');
+}
 
 /**************DOWNTIME****************/
 if(isSet($SERVER_DOWN)&&$SERVER_DOWN===true){
 	header("HTTP/1.0 418 I'm a teapot");
-	echo "<h1>Error <a href='http://tools.ietf.org/html/rfc2324#section-2.3.2'>418 I'm a teapot</a></h1>";
-	echo "<p>In other words, the server went crazy and we're fixing it. Check back in a moment to see if it's back.</p>";
-	echo "<p>Thanks for your patience, and we hope to be back soon!</p>";
-	echo "<p>-DOEQs Dev Team</p>";
+	echo <<<HEREDOC
+<h1>Error <a href='http://tools.ietf.org/html/rfc2324#section-2.3.2'>418 I'm a teapot</a></h1>";
+echo "<p>In other words, the server went crazy and we're fixing it. Check back in a moment to see if it's back.</p>";
+echo "<p>Thanks for your patience, and we hope it'll be working again soon!</p>";
+echo "<p>-DOEQs Dev Team</p>
+HEREDOC;
 	die();
 }
-function get404(){
-	header("HTTP/1.0 404 Not Found");
-	$ru=basename($_SERVER['REQUEST_URI']);
-	$str=<<<HEREDOC
-<p>Oops, the page <a href="{$_SERVER['REQUEST_URI']}">$ru</a> wasn't found.</p>
-<p>If you typed the address, check that it's entered correctly.</p>
-<p>Otherwise, you can try waiting a bit then reloading the page.</p>
-<p>-DOEQs Dev Team</p>
-HEREDOC;
-	logfile('err','404 Not Found');
-	return $str;
-}
 
-
-/****************INCLUDES******************/
-require_once 'conf/config.php';//Config.
-require_once 'classes/class.DB.php';//Safe, consistent (MySQL) databasing.
-$database=new DB($DB_SERVER,$DB_USERNAME,$DB_PASSWORD,$DB_DATABASE);//Surprisingly, it's faster if we load it every page.
-require_once 'accountManagement.php';//Account and session management.
-//also: DB, qIO, fileToStr, qParser, etc.
-function require_class(){
-	foreach(func_get_args() as $class_name)
-		require_once 'classes/class.'.stripslashes($class_name).'.php';
+/****************LOGGING*******************/
+function logfile($file,$str=NULL){
+	if(!val('f',$file)){err_dev('Invalid log file name.');return false;}
+	
+	if(val('s',$str))$str=str_replace(array("\n\n","\r\n\r\n"),"\r\n",strval($str)).' -- ';
+	else $str = '';
+	
+	$log=$str.$_SERVER['REMOTE_ADDR'].' '.date('l, F j, Y h:i:s A').' '.$_SERVER['REQUEST_URI']."\r\n\r\n";
+	file_put_contents(__DIR__.'/logs/'.$file.'.log',$log,FILE_APPEND);
+	return true;
 }
+logfile('req','Request');
 
 /******************FILES*******************/
 /*
@@ -143,28 +151,103 @@ function dirsize($path)
 }
 
 
-/****************INTEGERS****************/
-function val_int($n){//Validates that it's an integer
-	if(!is_numeric($n)||intval($n)!=$n)
+/****************DATA VALIDATION****************/
+function val($type /*,$x1,$x2,...*/){
+	$args=func_get_args();
+	array_shift($args);
+	if(!count($args)){
+		err_dev('val(): Nothing to validate.');
 		return false;
-	return true;
+	}
+	
+	if(is_string($type)&&strpos($type,',')!==false)$type=explode(',',$type);
+	
+	if(is_array($type)){//MULTIPLE TYPES, MULTIPLE VALIDATEES
+		if(count($type)!=count($args)){err_dev('val(): #types != #validatees');return false;}
+		foreach($args as $arg)
+			if(!val(array_shift($type),$arg))
+				return false;
+		return true;
+	}
+	elseif(is_string($type)&&count($args)>1){//SINGLE TYPE, MULTIPLE VALIDATEES
+		foreach($args as $arg)
+			if(!val($type,$arg))
+				return false;
+		return true;
+	}
+	elseif(!is_string($type)){err_dev('val(): $type neither string nor array');return false;}//Invalid $type.
+	
+	$x=$args[0];
+	
+	if(substr($type,0,1)=='*'){//SINGLE ARRAY-TYPE, TO VALIDATE A SINGLE ARRAY VALIDATEE
+		//e.g. "*i" validates an array of integers, **i validates an array of arrays of integers
+		if(!is_array($x))return false;
+		if($type=='*')return true;
+		foreach($x as $xi)
+			if(!val(substr($type,1),$xi))return false;
+		return true;
+	}
+	
+	//SINGLE TYPE, SINGLE VALIDATEE
+	switch($type){//None of these can begin with '*'
+		case 's':case 'string':		return is_string($x);
+		
+		case 'i-':	return is_int($x) && $x < 0;
+		case 'i0-':	return is_int($x) && $x <= 0;
+		case 'i':	return is_int($x);
+		case 'i0+':	return is_int($x) && $x >= 0;
+		case 'i+':	return is_int($x) && $x > 0;
+		
+		case 'num':	return is_numeric($x);
+		
+		case 'aln':	return is_string($x) && ctype_alnum($x);
+		case 'abc':	return is_string($x) && ctype_alpha($x);
+		
+		case 'f':case 'file':		return is_string($x)
+										&& preg_match('/^[A-Za-z0-9]([A-Za-z0-9\_\-\.]+[A-Za-z0-9])?$/i',$x)
+										&& !strpos($x,'..');
+		
+		default:					err_dev('val(): Invalid validation type.');return false;
+	}
 }
-function normRange($n,$a,$b){//Normalizes $n to the range [$a,$b] (if it's smaller than $a, $a; if it's larger than $b, $b; otherwise $n same.)
-	$n=intval($n);
-	if($a>$b)err('normRange: invalid range');
-	if($n<$a)return $a;
-	if($n>$b)return $b;
+
+function inRange($n,$a,$b){//Checks if $n is in range [$a,$b].
+	if(!val('i',$n))return NULL;
+	if($a>$b)err('inRange: invalid range');
+	if($n<$a)return -1;
+	if($n>$b)return 1;
+	return 0;
+}
+function normRange($n,$a,$b,$default=NULL){//Normalizes $n to the range [$a,$b]; if $n is invalid it sets to $default.
+	$i=inRange($n,$a,$b);
+	if($i===NULL)return $default;
+	if($i===-1)return $a;
+	if($i===1)return $b;
 	return $n;
 }
 
-/******************ARRAYS*****************/
-function anyIndicesEmpty($array/*, var1, var2, ...,varN*/){//it's NOT anyIndicesNull. '' is empty.
+function arrayKeysExist($ARR,$indices){
+	if(!val('*',$ARR))return false;
+	foreach($indices as $index)
+		if(!array_key_exists($index,$ARR))return false;
+	return true;
+}
+function arrayKeysNotEmpty($ARR,$indices){//'' is empty - however, empty() takes 0 and '0' as empty :(
+	if(!val('*',$ARR))return false;
+	foreach($indices as $index)
+		if(!array_key_exists($index,$ARR)||is_null($ARR[$index])||$ARR[$index]==='')return false;
+	return true;
+}
+//--todo--Naming conventions... parametric conventions...
+function anyIndicesEmpty($array/*, var1, var2, ...,varN*/){//it's NOT anyIndicesEmpty. '' is empty.
 	$args=func_get_args();
-	array_shift($args);//shift off the $array one
+	array_shift($args);
 	foreach($args as $arg)
 		if(!array_key_exists($arg,$array)||empty($array[$arg])/*&&$array[$arg]==='0'*/)return true;
 	return false;
 }
+
+/****************ARRAY OPERATIONS*****************/
 function randomizeArr($arr){//Randomly permute an array - yes, it works! in what amounts to O(n)!
 //realization several months later... this is exactly the Fisher-Yates shuffle. But I discovered it myself, hmph!
 	for($i=count($arr)-1;$i>0;$i--){
@@ -189,7 +272,7 @@ function arrayToRanges($arr){//Converts [1,2,3,5,6,8,9,10] to the human-readable
 	if($arr[count($arr)-1]==$arr[count($arr)-2]+1)$string.=$arr[count($arr)-1];
 	return $string;
 }
-function Array2DTranspose($arr){//Transposes a 2d array (aka flipping x and y; aka flipping around its primary axis)
+function Array2DTranspose($arr){//Transposes a 2d array (aka flipping x and y)
     $out = array();
     foreach ($arr as $key => $subarr)
 		foreach ($subarr as $subkey => $subvalue)
@@ -197,43 +280,61 @@ function Array2DTranspose($arr){//Transposes a 2d array (aka flipping x and y; a
     return $out;
 }
 
-/***************HTTP Data Existence*******************/
-function posted(){
-	$args=func_get_args();
-	foreach($args as $arg)
-		if(!array_key_exists($arg,$_POST))return false;
-	return true;
-}
-function getted(){
-	$args=func_get_args();
-	foreach($args as $arg)
-		if(!array_key_exists($arg,$_GET))return false;
-	return true;
-}
-function sessioned(){
-	$args=func_get_args();
-	foreach($args as $arg)
-		if(!array_key_exists($arg,$_SESSION))return false;
-	return true;
-}
-function ifpost($n){
-	if(posted($n))return htmlentities($_POST[$n]);
-	else return '';
-}
+/***************HTTP Data Exist/Get*******************/
+//:( Always gonna be string type anyway...
+function posted(){return arrayKeysExist($_POST,func_get_args());}
+function POST($index){if(posted($index))return $_POST[$index];else return NULL;}
+
+function getted(){return arrayKeysExist($_GET,func_get_args());}
+function GET($index){if(getted($index))return $_GET[$index];else return NULL;}
+
+function sessioned(){return arrayKeysExist($_SESSION,func_get_args());}
+function SESSION($index){if(sessioned($index))return $_SESSION[$index];else return NULL;}
+
+//Note: never trust REQUEST_URI or stuff like that. Can be spoofed.
+function servered(){return arrayKeysExist($_SERVER,func_get_args());}
+function SERVER($index){if(servered($index))return $_SERVER[$index];else return NULL;}
+
+function filed(){return arrayKeysExist($_FILE,func_get_args());}
+//function FILE($index){if(filed($index))return $_FILE[$index];else return NULL;}
+//name taken
 
 /**********************PAGE GENERATION*************************/
+function get404(){
+	header("HTTP/1.0 404 Not Found");
+	$ru=basename($_SERVER['REQUEST_URI']);
+	$str=<<<HEREDOC
+<p>Oops, the page <a href="{$_SERVER['REQUEST_URI']}">$ru</a> wasn't found.</p>
+<p>If you typed the address, check that it's entered correctly.</p>
+<p>Otherwise, you can try waiting a bit then reloading the page.</p>
+<p>-DOEQs Dev Team</p>
+HEREDOC;
+	logfile('err','404 Not Found');
+	return $str;
+}
+
 //Upon shutdown, templateify() will run, emptying the output buffer into a page template and then sending *that* instead.
-ob_start();
-$TIME_START=microtime(true);
+ob_start();//Collect EVERYTHING that's outputted.
+$TIME_START=microtime(true);//For page load time measurement. --todo-- log this?
 function templateify(){
-	global $CANCEL_TEMPLATEIFY;//In case, for example, you want to send an attachment through this page.
+	global $CANCEL_TEMPLATEIFY;//In case, for example, you want to send an attachment.
 	if(@$CANCEL_TEMPLATEIFY)return;
+	//(err uses cancel_templateify)
+	
+	$error = error_get_last();
+	if( $error !== NULL)//This means that the reason we're here at templateify is because of a fatal error.
+		error_catcher($error["type"],$error["message"],$error["file"],$error["line"]);
 	
 	global $pagesTitles,$hiddenPagesTitles,$adminPagesTitles;
 	
-	$pagename=basename($_SERVER['REQUEST_URI'],'.php');//--TODO-- needs to be full relative paths - e.g. classes/about.php not 404
+	$pagename=basename($_SERVER['REQUEST_URI'],'.php');
+	//--TODO-- needs to be full relative paths - e.g. "classes/about.php" gets About.
 		//likewise, links in navbar must be absolute or relative to ROOT_PATH
-	if($pagename==''||$pagename=='doeqs_new')$pagename='index';
+	
+	if(!val('f',$pagename))$pagename='404';
+	
+	//Make this consistent with the _actual_ 404s with htaccess ("foafi/dshiafos.php")
+	if($pagename==''||$pagename=='doeqs_new')$pagename='index';//--todo-- hax
 	if(array_key_exists($pagename,$pagesTitles)){
 		$title=$pagesTitles[$pagename];
 		$content=ob_get_clean();
@@ -243,7 +344,7 @@ function templateify(){
 		$content=ob_get_clean();
 	}
 	elseif(array_key_exists($pagename,$adminPagesTitles)&&userAccess('a')){
-		$title=$adminPagesTitles[$pagename].' [Admin-Only Page]';
+		$title=$adminPagesTitles[$pagename].' <i>[Admin-Only Page]</i>';
 		$content=ob_get_clean();
 	}
 	else{
@@ -255,21 +356,20 @@ function templateify(){
 	
 	$nav='[';
 	foreach($pagesTitles as $p=>$t)
-		$nav.="&nbsp;&middot;&nbsp;<a href='$p.php'>$t</a>";
+		$nav.="&nbsp;&middot;&nbsp;<a href='".ROOT_PATH."$p.php'>$t</a>";
 	if(userAccess('a')){
 		$nav.='&nbsp;&mdash;&nbsp;';
 		foreach($adminPagesTitles as $p=>$t)
-			$nav.="<a href='/$p.php'>$t</a>";
+			$nav.="<a href='".ROOT_PATH."$p.php'>$t</a>";
 	}
 	$nav.='&nbsp;&middot;&nbsp;]';
 	if(userAccess('u'))$nav.='&nbsp;&nbsp;&nbsp;<form action="login.php" method="POST" style="display:inline-block;"><input type="hidden" name="ver" value="<?=csrfCode();?>"/><input type="submit" name="logout" value="Log Out" /></form>';
-
 	
 	//tried OB to get file contents which died for some reason...
-	$template=file_get_contents(__DIR__.'/html_template.php');//--todo-- don't access files outside of protected object
+	$template=file_get_contents(__DIR__.'/html_template.html');//--todo-- don't access files outside of protected object
 	
 	global $VERSION_NUMBER,$TIME_START;
-	echo str_replace(['%title%','%content%','%nav%','%version%','%loadtime%','%root%'],[$title,$content,$nav,$VERSION_NUMBER,substr(1000*(microtime(true)-$TIME_START),0,6),ROOT_PATH],$template);
+	echo str_replace(array('%title%','%content%','%nav%','%version%','%loadtime%','%root%'),array($title,$content,$nav,$VERSION_NUMBER,substr(1000*(microtime(true)-$TIME_START),0,6),ROOT_PATH),$template);
 	ob_flush();
 	flush();
 }
@@ -277,6 +377,17 @@ register_shutdown_function('templateify');
 
 
 /**********************ERROR HANDLING**********************/
+//Note: DOES NOT STOP EXECUTION.
+function err_dev($description){//Developer error. You'd better look at the logs.
+	global $DEBUG_MODE;
+	logfile('err',$description /*.*/);
+	if($DEBUG_MODE){echo htmlentities($description);debug_print_backtrace();}
+	alert('A server error occurred.',-1);
+}
+function err_user($description){//User error. e.g. invalid email address
+	alert(htmlentities($description),-1);
+}
+
 //Shorthand function for trigger_error.
 function err($description){
 	trigger_error($description,E_USER_ERROR);
@@ -299,7 +410,7 @@ function error_catcher($errno,$errstr,$errfile,$errline){
 		ob_clean();//Shh, nothing happened!
 		echo 'An error occurred!';
 	}
-	
+	global $CANCEL_TEMPLATEIFY;$CANCEL_TEMPLATEIFY=true;
 	die();//Either way, an error should not let it go on executing.
 	//If you want to have errors within classes, implement a class error-catching system yourself and output it to the user that way. Preferably through alerts.
 }
@@ -322,7 +433,7 @@ function alert($text,$disposition=0,$page_name=NULL){
 	$sp='alerts_'.$page_name;
 	
 	if(!sessioned($sp))$_SESSION[$sp]=array();
-	$_SESSION[$sp][]=[$text,$disposition];
+	$_SESSION[$sp][]=array($text,$disposition);
 }
 function fetch_alerts_html(){
 	$page_name='';//basename($_SERVER['REQUEST_URI']);
@@ -348,10 +459,10 @@ function fetch_alerts_html(){
 function database_stats(){//Returns the database statistics as an HTML string.
 	//Note: huh hm try caching? Time the slowest parts of the code.
 	
-	global $database,$ruleSet;
+	global $ruleSet;
 	$ret='<div>Question Database Stats:';
 	$totalN=0;
-	$q=$database->query('SELECT Subject, COUNT(*) AS nQs FROM questions WHERE Deleted=0 GROUP BY Subject');
+	$q=DB::queryRaw('SELECT Subject, COUNT(*) AS nQs FROM questions WHERE Deleted=0 GROUP BY Subject');
 	
 	while($r=$q->fetch_assoc()){
 		$totalN+=$r['nQs'];

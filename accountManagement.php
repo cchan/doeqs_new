@@ -14,10 +14,8 @@ $SESSION_TIMEOUT_MINUTES
 NEEDED AT CALLTIME:
 posted()
 sessioned()
-DB
 err()?
 ...
-
 
 
 Special Note:
@@ -56,7 +54,7 @@ function session_total_reset(){//Destroys a session according to the php.net met
 }
 
 //15min session timeout
-if (@$_SESSION['LAST_ACTIVITY']&&time()-$_SESSION['LAST_ACTIVITY']>$SESSION_TIMEOUT_MINUTES*60)
+if (sessioned('LAST_ACTIVITY')&&time()-$_SESSION['LAST_ACTIVITY']>$SESSION_TIMEOUT_MINUTES*60)
 	session_total_reset();
 $_SESSION['LAST_ACTIVITY'] = time();
 
@@ -100,10 +98,7 @@ function genRandStr($length=NULL){
 function csrfVerify(){//Checks CSRF code validity, and returns whether to proceed. The return value is static. Erases 'ver'.
 	static $valid=NULL;
 	if(is_null($valid)){
-		if(posted('ver')&&sessioned('ver')&&hashEquals($_POST['ver'],$_SESSION['ver'])){
-			unset($_POST['ver'],$_SESSION['ver']);
-			$valid=true;
-		}
+		if(hashEquals(POST('ver'),SESSION('ver')))$valid=true;
 		else $valid=false;
 		unset($_POST['ver'],$_SESSION['ver']);
 	}
@@ -152,6 +147,7 @@ function authError(){
 }
 
 function hashEquals($a,$b){//Compares the *hashes* of two variables to mess with timing attacks.
+	if(!val('s',$a,$b))return false;
 	$m=microtime();
 	return sha1($a.$m.$b)==sha1($b.$m.$a);
 }
@@ -177,13 +173,13 @@ function userAccess($minPrivilegeLevel){
 	
 	$hierarchy='xuca';//hierarchy, from lowest to highest
 	
-	if(count($minPrivilegeLevel)!==1)error("Invalid permission level '$minPrivilegeLevel'");
+	if(count($minPrivilegeLevel)!==1)err("Invalid permission level '$minPrivilegeLevel'");
 	if(!sessioned('email'))$nUser=0;
 	else $nUser=strpos($hierarchy,$_SESSION['permissions']);
 	$nAllowed=strpos($hierarchy,$minPrivilegeLevel);
 	
-	if($nUser===false)error("Invalid session permission level '{$_SESSION["permissions"]}'");
-	if($nAllowed===false)error("Invalid input permission level '$minPrivilegeLevel'");
+	if($nUser===false)err("Invalid session permission level '{$_SESSION["permissions"]}'");
+	if($nAllowed===false)err("Invalid input permission level '$minPrivilegeLevel'");
 	
 	else return $nUser>=$nAllowed;
 }
@@ -199,8 +195,7 @@ if(sessioned('user_v')&&(!array_key_exists('v',$_COOKIE)||$_COOKIE['v']!=$_SESSI
 function loginEmailPass($email,$pass){
 	if(!filter_var($email, FILTER_VALIDATE_EMAIL))return false;
 	
-	global $database;
-	$q=$database->query_assoc('SELECT email, passhash, permissions, salt FROM users WHERE email=%0%',[$email]);
+	$q=DB::queryFirstRow('SELECT email, passhash, permissions, salt FROM users WHERE email=%s',$email);
 	if(!$q)return false;
 	
 	$passhash=saltyStretchyHash($pass,$q['salt']);
@@ -248,13 +243,11 @@ Creates a new profile with $email, $pass/$confpass. Initated to permissions 'u',
 Returns false if there were no errors, and the text of the error if there were errors.
 */
 function newProfileError($email,$pass,$confpass){
-	global $database;
-	
 	if(!filter_var($email, FILTER_VALIDATE_EMAIL))return 'Invalid email.';
 	if($pass!==$confpass)return 'Passwords do not match.';
 	if(strlen($pass)<8)return 'Password too short (must be at least 8 characters).';
 	
-	if($database->query_assoc('SELECT 1 from users WHERE email=%0% LIMIT 1',[$email]))
+	if(DB::queryFirstRow('SELECT 1 from users WHERE email=%s LIMIT 1',$email))
 		return 'That email already exists.';
 	
 	$permissions='u';//regular user
@@ -262,7 +255,12 @@ function newProfileError($email,$pass,$confpass){
 	$salt=genRandStr();
 	$passhash=saltyStretchyHash($pass,$salt);//All of this is for nothing without end-to-end SSL.
 	
-	$database->query('INSERT INTO users (email, passhash, permissions, salt) VALUES (%0%,%1%,%2%,%3%)',[$email,$passhash,$permissions,$salt]);
+	DB::insert('users',array(
+		'email'=>$email,
+		'passhash'=>$passhash,
+		'permissions'=>$permissions,
+		'salt'=>$salt
+	));
 	
 	return false;//'no error'
 }

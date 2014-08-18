@@ -6,6 +6,7 @@ config.php
 Any configuration stuff.
 */
 
+//Meh... is CONF::$DEBUG_MODE nice enough to make everything public static?
 
 $DEBUG_MODE=true;//True if want lots of debug output. False on real production to hide everything.
 
@@ -15,24 +16,10 @@ $USER_LOGIN_REQUIRED=false;
 /**********************METADATA*********************/
 $VERSION_NUMBER='0.2.2';
 $WEBMASTER_EMAIL='moose54321@gmail.com';
-date_default_timezone_set("America/Toronto");//(No Boston)
 
 /************************SESSION*********************/
 $SESSION_TIMEOUT_MINUTES=30;
-ini_set('session.gc_maxlifetime',600);
 //$MAX_REQUESTS_PER_MINUTE=30;//Still to be implemented. What's a good number, and what's a good response?
-ini_set('display_errors',false);
-ini_set('log_errors',true);
-ini_set('safe_mode',true);
-ini_set('safe_mode_gid',true);
-//register_globals 0
-//disable_functions extract mysql_connect
-//disable_classes mysql
-
-//$DB_SERVER
-//$DB_USERNAME
-//$DB_PASSWORD
-//$DB_DATABASE
 
 /***********************DOEQS************************/
 $ruleSet=array(//...to be honest, this is annoying.
@@ -50,9 +37,9 @@ $MAX_NUMQS=25;//RANDQ: How many questions can you fetch per pageload?
 $DEFAULT_NUMQS=25;//RANDQ: Default number of questions to fetch
 
 /****************FILE TRANSFER LIMITS****************/
-$UPLOAD_MAX_FILESIZE = 2;ini_set('upload_max_filesize',$UPLOAD_MAX_FILESIZE);//MB
-$POST_MAX_SIZE = 2;ini_set('post_max_size',$POST_MAX_SIZE);//MB
-$MAX_FILE_UPLOADS=5;ini_set('max_file_uploads',$MAX_FILE_UPLOADS);//in multi-upload or just multiple file form elements
+ini_set('upload_max_filesize',2);//MB
+ini_set('post_max_size',2);//MB
+ini_set('max_file_uploads',5);//in multi-upload or just multiple file form elements
 
 /********************LOGGING**********************/
 $REQUEST_LOG_FILE='request_log.log';
@@ -77,6 +64,17 @@ $hiddenPagesTitles=array(//Not in navbar but accessible
 $adminPagesTitles=array(//In navbar and accessible, but only for admins
 	"admin"=>"Admin",
 );
+
+
+date_default_timezone_set("America/Toronto");//(No Boston)
+ini_set('session.gc_maxlifetime',600);
+ini_set('display_errors',false);
+ini_set('log_errors',true);
+ini_set('safe_mode',true);
+ini_set('safe_mode_gid',true);
+//register_globals 0
+//disable_functions extract mysql_connect
+//disable_classes mysql
 
 //Server-specific
 require "config.server.php";

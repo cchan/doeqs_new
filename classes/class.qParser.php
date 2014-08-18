@@ -9,7 +9,7 @@ class qParser{
 	
 	//strParseQs - high-level question-parsing; accepts string of questions to parse, does whatever with them, and returns string of output.
 	public function parse($qstr){
-		global $database,$ruleSet;
+		global $ruleSet;
 		if(str_replace([" ","	","\n","\r"],'',$qstr)===''){echo "Error: No text submitted.";return '';}
 		
 		//$t=microtime();

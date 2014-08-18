@@ -54,24 +54,24 @@ else{?>
 
 <table id="loginformtable"><tr>
 	<td>
-	<?=generateForm(['action'=>'login.php','method'=>'POST','autocomplete'=>'off'],[
+	<?=generateForm(array('action'=>'login.php','method'=>'POST','autocomplete'=>'off'),array(
 		'<h2>Sign Up</h2>',
-		['prompt'=>'Email:','name'=>'s_email','value'=>isSet($signup_success)?'':ifpost('s_email'),'autofocus'=>'autofocus'],
-		['prompt'=>'Password:','name'=>'s_pass','type'=>'password'],
-		['prompt'=>'Again:','name'=>'s_confpass','type'=>'password'],
+		array('prompt'=>'Email:','name'=>'s_email','value'=>isSet($signup_success)?'':POST('s_email'),'autofocus'=>'autofocus'),
+		array('prompt'=>'Password:','name'=>'s_pass','type'=>'password'),
+		array('prompt'=>'Again:','name'=>'s_confpass','type'=>'password'),
 		'Captcha:<br>'.getCaptcha(),
-		['name'=>'signup','type'=>'submit','value'=>'Sign Up']
-	])?>
+		array('name'=>'signup','type'=>'submit','value'=>'Sign Up')
+	))?>
 	Register to gain access to all features of the site! To be added soon: question tracking, subjects, common words, etc.
 	</td>
 	<td>
-	<?=generateForm(['action'=>'login.php','method'=>'POST'],[
+	<?=generateForm(array('action'=>'login.php','method'=>'POST'),array(
 		'<h2>Log In</h2>',
-		['prompt'=>'Email:','name'=>'email','value'=>isSet($signup_success)?ifpost('s_email'):ifpost('email'),'autofocus'=>'autofocus'],
-		['prompt'=>'Password:','name'=>'pass','type'=>'password'],
+		array('prompt'=>'Email:','name'=>'email','value'=>isSet($signup_success)?POST('s_email'):POST('email'),'autofocus'=>'autofocus'),
+		array('prompt'=>'Password:','name'=>'pass','type'=>'password'),
 		'',
-		['name'=>'login','type'=>'submit','value'=>'Log In']
-	])?>
+		array('name'=>'login','type'=>'submit','value'=>'Log In')
+	))?>
 	</td>
 </tr></table>
 <script>if($('[name="email"]').val()​​​​​​​​​​​​​​​​​​​​​.trim().length>0)$('[name="pass"]').focus();</script>

@@ -1,5 +1,13 @@
 <?php
+define('ROOT_PATH','');
+require_once ROOT_PATH.'functions.php';
+require_class('qIO');
+restrictAccess('u');//xuca
 
+/*
+randq.php
+Fetches random questions.
+*/
 
 /*------------todo next-----------/
 Integrate everything into this interface? With click-to-edit, etc. Hm. It should at least look *similar*.
@@ -7,15 +15,6 @@ Integrate everything into this interface? With click-to-edit, etc. Hm. It should
 Like protobowl - display only one at a time? Sleek CSS stuff definitely.
 */
 
-
-define('ROOT_PATH','');
-require_once ROOT_PATH.'functions.php';
-require_once ROOT_PATH.'classes/class.qIO.php';
-restrictAccess('u');//xuca
-/*
-randq.php
-Fetches random questions.
-*/
 
 
 $q=new qIO;
@@ -37,16 +36,16 @@ $fullname=array("QParts"=>"Question Part","Subjects"=>"Subject","QTypes"=>"Quest
 //Config options, and setting the SESSION variables to new values based on POST variables
 $checkboxoptions="<div style='font-size:1.5em;font-weight:bold;'>Options</div>";
 if(!sessioned('randq'))$_SESSION["randq"]=array();
-foreach($counts as $name=>$count){
-	$checkboxoptions.='<div><b>'.$fullname[$name].'</b> ';
+foreach($fullname as $name=>$full){
+	$count=count($ruleSet[$name]);
+	$checkboxoptions.='<div><b>'.$full.'</b> ';
 	if(csrfVerify()&&posted($name))$_SESSION["randq"][$name]=$_POST[$name];
 	elseif(!array_key_exists($name,$_SESSION["randq"]))$_SESSION["randq"][$name]=NULL;//Remembering in $_SESSION
 	for($i=0;$i<$count;$i++)
 		$checkboxoptions.='<label>'.$ruleSet[$name][$i].' <input type="checkbox" name="'.$name.'[]" value="'.$i.'" '.((is_array($_SESSION["randq"][$name])&&in_array($i,$_SESSION["randq"][$name])||$_SESSION["randq"][$name]===NULL)?'checked':'').' /></label> ';
 	$checkboxoptions.='</div>';
 }
-if(csrfVerify()&&posted("numqs")&&val_int($_POST["numqs"]))$_SESSION["randq"]["numqs"]=normRange($_POST["numqs"],1,$MAX_NUMQS);
-elseif(!sessioned("numqs"))$_SESSION["randq"]["numqs"]=$DEFAULT_NUMQS;
+$_SESSION["randq"]["numqs"]=normRange(csrfVerify()?POST("numqs"):NULL,1,$MAX_NUMQS,$DEFAULT_NUMQS);
 $checkboxoptions.="<b>Number of Questions</b> (max {$MAX_NUMQS}) <input type='number' name='numqs' value='{$_SESSION["randq"]["numqs"]}' min='1' max='{$MAX_NUMQS}'/>";
 
 //Using the session variables set above to get random questions.
@@ -102,6 +101,7 @@ background-color:white;
 //QID,isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
 //--todo-- 'Google This' functionality
 echo $q->allToHTML(<<<HEREDOC
+<style>.mcchoice:empty{display:none;}.mcchoice::before{content:attr(data);}</style>
 <div class='question'>
 <span style='display:inline-block;width:40%;'>[QID %QID%]</span><span style='display:inline-block;width:59%;text-align:right;font-size:0.8em;'><a href="#" class="editbtn">[Edit]</a></span>
 <div>Mark as Bad: <input type="checkbox" name="markBad[]" value="%N%"/></div>
@@ -109,10 +109,10 @@ echo $q->allToHTML(<<<HEREDOC
 <div style='font-weight:bold;text-align:center;' class="part">%PART%</div>
 <div><span class="subject">%SUBJECT%</span> <i><span class="type">%TYPE%</span></i> <span class="qtext">%QUESTION%</span></div>
 <div style="font-size:0.9em;">
-<div>W) %W%</div>
-<div>X) %X%</div>
-<div>Y) %Y%</div>
-<div>Z) %Z%</div>
+<div class='mcchoice' data='W) '>%W%</div>
+<div class='mcchoice' data='X) '>%X%</div>
+<div class='mcchoice' data='Y) '>%Y%</div>
+<div class='mcchoice' data='Z) '>%Z%</div>
 </div>
 <br>ANSWER: <span class='hiddenanswer'><span class='ans'>%ANSWER%</span> <span class='hov'>[hover to show]</span></span>
 <br>

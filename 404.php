@@ -1,6 +1,5 @@
 <?php
-#Place at root.
-define('ROOT_PATH','');//I don't know why this is so annoying.
+define('ROOT_PATH','');
 require_once ROOT_PATH.'/functions.php';
-die();
+die();//Trigger templateify to not recognize "404.php", and so display the expected 404.
 ?>

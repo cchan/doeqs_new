@@ -15,19 +15,19 @@ if(csrfVerify()){
 		die("logged out");
 	}
 	elseif(isSet($_POST["truncQs"])){
-		$database->query("TRUNCATE TABLE questions");
+		DB::query("TRUNCATE TABLE questions");
 		alert("TRUNCATE TABLE executed.<br><br>",1);
 	}
 	elseif(isSet($_POST["timesViewed"])){
-		$database->query("UPDATE questions SET TimesViewed=0");
+		DB::query("UPDATE questions SET TimesViewed=0");
 		alert("All questions' times-viewed-s zeroed.<br><br>",1);
 	}
 	elseif(isSet($_POST["markBad"])){
-		$database->query("UPDATE questions SET MarkBad=0");
+		DB::query("UPDATE questions SET MarkBad=0");
 		alert("All questions' marked-as-bad-s zeroed.<br><br>",1);
 	}
 	elseif(isSet($_POST["optimizeTables"])){
-		$database->query("OPTIMIZE TABLE users,questions");
+		DB::query("OPTIMIZE TABLE users,questions");
 		alert("OPTIMIZE TABLE executed<br><br>",1);
 	}
 	elseif(isSet($_POST["qInt"])){
@@ -49,6 +49,11 @@ if(csrfVerify()){
 	}
 }
 echo '</b>';
+
+
+//Useful: UPDATE `questions` SET Deleted=1 WHERE isSA=0 AND Answer!='0' AND Answer!='1' AND Answer!='2' AND Answer!='3'
+
+
 	
 $filesTotalSize=dirsize(__DIR__);
 
@@ -60,8 +65,8 @@ $filesTotalSize=dirsize(__DIR__);
 		<fieldset>
 			<legend>Users</legend>
 			<?php 
-				$q=$database->query_assoc('SELECT COUNT(*) AS n FROM users');
-				echo "<div>Number of users in database: <b>{$q['n']}</b></div>";
+				$n=DB::queryFirstField('SELECT COUNT(*) FROM users');
+				echo "<div>Number of users in database: <b>$n</b></div>";
 			?>
 		</fieldset>
 		<fieldset>
