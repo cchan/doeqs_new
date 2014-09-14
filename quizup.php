@@ -1,7 +1,7 @@
 <?php
-define('ROOT_PATH','../');
+define('ROOT_PATH','');
 require_once ROOT_PATH.'functions.php';
-require_once ROOT_PATH.'classes/class.qIO.php';
+require_class('qIO');
 restrictAccess('u');//xuca
 
 $q=new qIO;

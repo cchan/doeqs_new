@@ -10,6 +10,14 @@ Input of questions into the database.
 
 $unparsed='';
 
+
+
+$lastErr=error_get_clear();
+if(isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > convert_to_bytes(ini_get('post_max_size'))){
+	echo 'File(s) too large.';
+	$error = true;
+}
+
 if(csrfVerify()&&(posted("copypaste")||filed("fileupload")||posted("directentry"))){
 	echo '<div style="font-size:0.8em;border:solid 1px #000000;display:inline-block;padding:5px;">
 		<i>We are processing your questions right now...</i><br><br>';
@@ -30,24 +38,27 @@ if(csrfVerify()&&(posted("copypaste")||filed("fileupload")||posted("directentry"
 		}
 		elseif(filed("fileupload")){
 			require_class("fileToStr");
-			$fs=new fileToStr();
+			$fs=new fileToStr;
 			if(is_array($_FILES["fileupload"]["tmp_name"])){//for multiple-supporting browsers
 				foreach($_FILES["fileupload"]["tmp_name"] as $ind=>$tmp_name){
 					$name=$_FILES["fileupload"]["name"][$ind];
-					echo "File $name: ";
-					if($name==''||$tmp_name==''){err("No file.");$error=true;continue;}
-					$unparsed.=$qp->parse($fs->convert($name,$tmp_name));
+					echo "File <b>$name</b>: ";
+					if($name==''||$tmp_name=='')
+						echo "No file.";
+					else
+						$unparsed.=$qp->parse($fs->convert($name,$tmp_name));
 					echo "<br>";
 				}
 			}
 			else $unparsed=$qp->parse($fs->convert($_FILES["fileupload"]["name"],$_FILES["fileupload"]["tmp_name"]));
 		}
 		else{err("Invalid form input");$error=true;}
+		
 		if($error==false)
 			if(str_replace(array("\n","\r"," ","	","_"),'',$unparsed)!='')
-				echo "<br><br>Below, in the copy-paste section, are what remains in the document after detecting all the questions we could find.<br>";
+				echo "<br>Below, in the copy-paste section, are what remains in the document after finding and removing all the questions we could find. Edit it so we can parse the rest.";
 			else
-				echo "<br><br>No unparsed question text found (that means we got every question). Yay!";
+				echo "<br>No unparsed question text found. This may mean that we parsed every question, in which case yay! Or, there might have been an error, in which case :(";
 	}
 	echo '</div><br><br>';
 }
@@ -94,7 +105,7 @@ Enter some questions:
 		<?php }else{?>
 			Paste it all here:<br>
 		<?php }?>
-		<textarea name="copypaste" style="width:100%;height:10em;"><?=preg_replace(['/[\r\n]+/','/[\_]+/'], ["\n",''],$unparsed);?></textarea><br>
+		<textarea name="copypaste" style="width:100%;height:10em;"><?=preg_replace(['/[\r\n]+/'/*,'/[\_]+/'*/], ["\n"/*,''*/],$unparsed);?></textarea><br>
 		<input type="submit" value="Submit Question(s)"/>
 	</form>
 	
@@ -107,7 +118,7 @@ Enter some questions:
 		<div style="font-size:0.7em">(up to <?=$MAX_FILE_UPLOADS;?> files if your browser supports it)<br>
 		(up to <?=$UPLOAD_MAX_FILESIZE;?>MB file size)<br>
 		<i>We currently support txt, html, doc, docx, odt, and pdf.</i></div>
-		<input type="submit" value="Upload"> <small>Be patient, this will take a while.</small><br>
+		<input type="submit" value="Upload"> <small>Depending on the filesize, this may take several seconds to complete.</small><br>
 	</form>
 </div>
 

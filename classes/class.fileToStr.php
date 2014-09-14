@@ -6,7 +6,7 @@ if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 class fileToStr{
 	public function __construct(){}
 	public function convert($filename,$filepath){
-		$ext=substr($filename,strrpos($filename,'.')+1);
+		$ext=pathinfo($filename,PATHINFO_EXTENSION);
 		switch($ext){
 			case "txt": return file_get_contents($filepath);
 			case "html": case "htm": return strip_tags(str_replace(array("<br>","<div>"),"\n",file_get_contents($filepath)));//get rid of all html tags, but keep some linebreaks there.
@@ -22,25 +22,22 @@ class fileToStr{
 		}
 	}
 	
+	//DOCX and ODT are variations on zipped XML, but need different methods of adding the linebreaks necessary for the regex to properly read things.
+	private function odtToText($filename) {
+		return strip_tags(str_replace("</text:p>","</text:p>\n",$this->readZippedXML($filename, "content.xml")));
+	}
+	private function docxToText($filename) {
+		return strip_tags(str_replace(['</w:r></w:p>','</w:r></w:p></w:tc><w:tc>'],[" ","\r\n"],
+			$this->readZippedXML($filename,"word/document.xml")));
+	}
+	
 	//http://stackoverflow.com/questions/5540886/extract-text-from-doc-and-docx
 	//docToText()
 	//Turns a .doc Word file into text. Magically.
 	private function docToText($filename) {
-		$fileHandle = fopen($filename, "r");
-		$line = @fread($fileHandle, filesize($filename));   
-		$lines = explode(chr(0x0D),$line);
-		$outtext = '';
-		foreach($lines as $thisline)
-		  {
-			$pos = strpos($thisline, chr(0x00));
-			if (($pos !== FALSE)||(strlen($thisline)==0))
-			  {
-			  } else {
-				$outtext .= $thisline."\n";
-			  }
-		  }
-		 $outtext = preg_replace("/[^a-zA-Z0-9\s\,\.\-\n\r\t@\/\_\(\)]/",'',$outtext);
-		return $outtext;
+		return preg_replace("/[^a-zA-Z0-9\s\,\.\-\n\r\t@\/\_\(\)]/","",//Condensed Gourav Mehta.
+			implode(" ",array_filter(explode(chr(0x0D),file_get_contents($filename)),function($x){
+				return strpos($x,chr(0x00))===FALSE&&strlen($x)!=0;})));
 	}
 	
 	
@@ -56,16 +53,6 @@ class fileToStr{
 		$a->setFilename($filename); 
 		$a->decodePDF();
 		return $a->output(); 
-	}
-
-
-	//DOCX and ODT are variations on zipped XML, but need different methods of adding the linebreaks necessary for the regex to properly read things.
-	private function odtToText($filename) {
-		return strip_tags(str_replace("</text:p>","</text:p>\n",$this->readZippedXML($filename, "content.xml")));
-	}
-	private function docxToText($filename) {
-	//ALSOOOOO make the regex even better, to detect it _without_ needing linebreaks!
-		return strip_tags(str_replace("</w:p>","</w:p>\n",$this->readZippedXML($filename, "word/document.xml")));
 	}
 
 	//The actual zipped-XML function, which works for a number of document formats.

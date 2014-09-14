@@ -37,9 +37,11 @@ $MAX_NUMQS=25;//RANDQ: How many questions can you fetch per pageload?
 $DEFAULT_NUMQS=25;//RANDQ: Default number of questions to fetch
 
 /****************FILE TRANSFER LIMITS****************/
-ini_set('upload_max_filesize',2);//MB
-ini_set('post_max_size',2);//MB
-ini_set('max_file_uploads',5);//in multi-upload or just multiple file form elements
+//ini_set('memory_limit',$MEMORY_LIMIT=10);
+//is it by default megabytes?
+ini_set('upload_max_filesize',$UPLOAD_MAX_FILESIZE=2);//MB - not even DOC files will exceed this, unless they have images.
+ini_set('post_max_size',$POST_MAX_SIZE=2);//MB - total upload
+ini_set('max_file_uploads',$MAX_FILE_UPLOADS=5);//in multi-upload or just multiple file form elements
 
 /********************LOGGING**********************/
 $REQUEST_LOG_FILE='request_log.log';

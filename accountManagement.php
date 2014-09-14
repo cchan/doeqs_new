@@ -99,7 +99,7 @@ function csrfVerify(){//Checks CSRF code validity, and returns whether to procee
 	static $valid=NULL;
 	if(is_null($valid)){
 		if(hashEquals(POST('ver'),SESSION('ver')))$valid=true;
-		else $valid=false;
+		else $valid=false;//alert("Submission security check failed.",-1);}//On every page :(
 		unset($_POST['ver'],$_SESSION['ver']);
 	}
 	return $valid;

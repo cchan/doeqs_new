@@ -295,9 +295,8 @@ function SESSION($index){if(sessioned($index))return $_SESSION[$index];else retu
 function servered(){return arrayKeysExist($_SERVER,func_get_args());}
 function SERVER($index){if(servered($index))return $_SERVER[$index];else return NULL;}
 
-function filed(){return arrayKeysExist($_FILE,func_get_args());}
-//function FILE($index){if(filed($index))return $_FILE[$index];else return NULL;}
-//name taken
+function filed(){return arrayKeysExist($_FILES,func_get_args());}
+function FILES($index){if(filed($index))return $_FILE[$index];else return NULL;}
 
 /**********************PAGE GENERATION*************************/
 function get404(){
@@ -319,11 +318,6 @@ $TIME_START=microtime(true);//For page load time measurement. --todo-- log this?
 function templateify(){
 	global $CANCEL_TEMPLATEIFY;//In case, for example, you want to send an attachment.
 	if(@$CANCEL_TEMPLATEIFY)return;
-	//(err uses cancel_templateify)
-	
-	$error = error_get_last();
-	if( $error !== NULL)//This means that the reason we're here at templateify is because of a fatal error.
-		error_catcher($error["type"],$error["message"],$error["file"],$error["line"]);
 	
 	global $pagesTitles,$hiddenPagesTitles,$adminPagesTitles;
 	
@@ -375,49 +369,11 @@ function templateify(){
 }
 register_shutdown_function('templateify');
 
-
-/**********************ERROR HANDLING**********************/
-//Note: DOES NOT STOP EXECUTION.
-function err_dev($description){//Developer error. You'd better look at the logs.
-	global $DEBUG_MODE;
-	logfile('err',$description /*.*/);
-	if($DEBUG_MODE){echo htmlentities($description);debug_print_backtrace();}
-	alert('A server error occurred.',-1);
+$CANCEL_TEMPLATEIFY=false;
+function cancel_templateify(){
+	global $CANCEL_TEMPLATEIFY;
+	$CANCEL_TEMPLATEIFY=true;
 }
-function err_user($description){//User error. e.g. invalid email address
-	alert(htmlentities($description),-1);
-}
-
-//Shorthand function for trigger_error.
-function err($description){
-	trigger_error($description,E_USER_ERROR);
-}
-//Error-handler function.
-function error_catcher($errno,$errstr,$errfile,$errline){
-	global $DEBUG_MODE;
-	ob_start();
-	debug_print_backtrace();
-	$backtrace=str_replace("\n","\r\n",ob_get_clean());
-	$err="Error #$errno: '$errstr' at line $errline of file $errfile. Debug Backtrace:\r\n$backtrace\r\n";
-	
-	logfile('err',$err);
-	
-	//Printing out
-	if($DEBUG_MODE){
-		echo "An error occurred:<br><pre>$err</pre><br>(logged as above)";
-	}
-	else{
-		ob_clean();//Shh, nothing happened!
-		echo 'An error occurred!';
-	}
-	global $CANCEL_TEMPLATEIFY;$CANCEL_TEMPLATEIFY=true;
-	die();//Either way, an error should not let it go on executing.
-	//If you want to have errors within classes, implement a class error-catching system yourself and output it to the user that way. Preferably through alerts.
-}
-set_error_handler('error_catcher', E_ALL);
-ini_set('error_reporting',E_ALL);
-error_reporting(E_ALL);
-//Strict: No notices allowed, either.
 
 
 /*******************ALERTS*********************/

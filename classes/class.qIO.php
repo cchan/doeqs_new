@@ -160,6 +160,8 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	public function commit(){
 		global $ruleSet;
 		
+		if(empty($this->Questions)||count($this->Questions)==0)return;
+		
 		$rows=array();
 		foreach($this->Questions as $qarr){
 			if($qarr[0]!=0)continue;//only commit non-committed new ones, which have default QID 0.
