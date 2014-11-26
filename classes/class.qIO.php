@@ -10,22 +10,20 @@ DOCUMENTATION OF DATABASE
 refactor "isB" "isSA" => hm
 */
 
-/*
 class Question{
-	public $QID=0;
-	private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
+	public $ID=0;
+	public $data;
 	public $committed = true;
 	
 	public function __construct(){
 		
 	}
 	
-	public function //[that catcher thingy]
-	{
+	/*public function ???(){//[that catcher thingy]
 		if($funcname in $QUESTION_FORM)
 			if($param1)$Q[$funcname]=$param1;
 			else return $Q[$funcname];
-	}
+	}*/
 	
 	public function loadArr($arr){
 	
@@ -42,16 +40,14 @@ class Question{
 	public function commit(){
 		
 	}
-}*/
+}
 
 class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	//private $QID,$isB,$Subject,$isSA,$Question,$MCChoices,$Answer;
 	private $Questions;
 	
-	public $error;
-	
 	public function __construct(){
-		//$this->QID=$this->isB=$this->Subject=$this->isSA=$this->Question=$this->MCChoices=$this->Answer=array();
+		$this->Questions=array();
 	}
 	public function __destruct(){
 		if(!is_null($this->Questions))foreach($this->Questions as $q)if($q[0]==0)$this->err('destruct: Uncommitted added questions.');
@@ -61,14 +57,8 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 		$this->Questions=array();
 		return $this;
 	}
-	public function addQResult($qresult){
-		while($row=$qresult->fetch_assoc())
-			$this->addAssocArr($row);
-	}
 	public function addAssocArr($qarr){
-		$this->Questions[]=array($qarr['QID'],$qarr['isB'],$qarr['Subject'],$qarr['isSA'],
-			$qarr['Question'],$qarr['MCW'],$qarr['MCX'],$qarr['MCY'],$qarr['MCZ'],
-			$qarr['Answer']);
+		$this->Questions[]=new Question($qarr);
 	}
 	public function addRand($QParts,$Subjects,$QTypes,$num){//arrays of the numbers to include eg subj [0,1,4] for b,c,e
 		global $MARK_AS_BAD_THRESHOLD, $ruleSet, $MAX_NUMQS, $DEFAULT_NUMQS;
@@ -190,10 +180,15 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 	public function toHTML($i,$formatstr){//Return nice HTML for question $i, based on $formatstr replacements.
 		if(empty($this->Questions)||count($this->Questions)==0)return '';
 		global $ruleSet;
-		$MCOptions='';
+		
+		array(
+			'N'=>$i,
+			'QID'=>$this->Questions[$i][0]
+			);
+		
 		//QID,isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
 		//static $x=false;if(!$x){$x=true;var_dump($this->Questions);}
-		return str_replace(
+		/*return str_replace(
 			array(
 				'%N%',
 				'%QID%',
@@ -209,7 +204,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 			),
 			array(
 				$i,
-				$this->Questions[$i][0],
+				,
 				$ruleSet['QParts'][intval($this->Questions[$i][1])],
 				$ruleSet['Subjects'][intval($this->Questions[$i][2])],
 				$ruleSet['QTypes'][intval($this->Questions[$i][3])],
@@ -224,7 +219,7 @@ class qIO{//Does all the validation... for you! By not trusting you at all. ;)
 				//$ruleSet['MCChoices'][$this->Questions[$i][9]]
 			),
 			$formatstr);
-		
+		*/
 		//--todo--test xss
 	}
 	public function allToHTML($formatstr){//Return nice HTML

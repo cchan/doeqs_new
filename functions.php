@@ -24,6 +24,9 @@ Note that most versions of PHP (as of now) don't support [1,2,3] array literals.
 
 require_once 'conf/config.php';//Config.
 
+require_once 'classes/Mustache/Autoloader.php';
+Mustache_Autoloader::register();
+
 require_once 'classes/meekrodb.2.3.class.php';//Precisely just a more complex and secure version of my own DB class :(
 DB::$host = $DB_SERVER;
 DB::$user = $DB_USERNAME;

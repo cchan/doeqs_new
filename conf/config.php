@@ -14,7 +14,7 @@ $SERVER_DOWN=false;//Teapot on every page if it's true. See top of functions.php
 
 $USER_LOGIN_REQUIRED=false;
 /**********************METADATA*********************/
-$VERSION_NUMBER='0.2.2';
+$VERSION_NUMBER='0.3.0';
 $WEBMASTER_EMAIL='moose54321@gmail.com';
 
 /************************SESSION*********************/
@@ -22,15 +22,37 @@ $SESSION_TIMEOUT_MINUTES=30;
 //$MAX_REQUESTS_PER_MINUTE=30;//Still to be implemented. What's a good number, and what's a good response?
 
 /***********************DOEQS************************/
-$ruleSet=array(//...to be honest, this is annoying.
-	"Subjects"=>array("BIOLOGY","CHEMISTRY","PHYSICS","MATHEMATICS","EARTH AND SPACE SCIENCE"),
-	"SubjRegex"=>'(BIO(?:LOGY)?|CHEM(?:ISTRY)?|PHYS(?:ICS|ICAL(?: SCIENCE)?)?|MATH(?:EMATICS)?|E(?:SS)?(?:ARTH)? ? ?(?:AND)? ?(?:SPACE)? ?(?:SCI(?:ENCE)?)?)',
-	"QTypes"=>array("Multiple Choice","Short Answer"),
-	"QParts"=>array("TOSS-UP","BONUS"),
-	"MCChoices"=>array("W","X","Y","Z"),
-	"SubjChars"=>str_split('bcpme'),
-	"TypeChars"=>str_split('ms'),
-	"PartChars"=>str_split('tb'),
+$QStructure=array(//Regexes should have exactly one capturing group in them.
+					//Keys in the values array are what ends up being captured from the regex, translating to real value. Use (?| ) to squash multiple options.
+					//Everything captured is case-insensitive; we will compare it to the keys in a case-insensitive fashion. Capitals are good though.
+	"Part"=>array(
+		"regex"=>"(?|(T)OSS[- ]?UP|(B)ONUS)",
+		"values"=>array("T"=>"TOSS-UP","B"=>"BONUS")
+	),
+	"Subject"=>array(
+		"regex"=>"(?|(BIO)(?:LOGY)?|(CHEM)(?:ISTRY)?|(PHYS)(?:ICS|ICAL(?: SCIENCE)?)?|(MATH)(?:EMATICS)?|(E)(?:SS)?(?:ARTH)? ?(?:AND)? ?(?:SPACE)? ?(?:SCI(?:ENCE)?)?|(ENERGY))",
+		"values"=>array("BIO"=>"Biology","CHEM"=>"Chemistry","PHYS"=>"Physics","MATH"=>"Mathematics","E"=>"Earth and Space Science","ENERGY"=>"Energy")
+	),
+	"Type"=>array(
+		"regex"=>"(?|(M)ultiple[- ]?Choice|(S)hort[- ]?Answer)",
+		"values"=>array("M"=>"Multiple Choice","S"=>"Short Answer")
+	),
+	"Text"=>array(
+		"regex"=>"([^\n]+)"
+		//No values provided, will assume any string will work.
+	),
+	"MCChoices"=>array(//Repeatable subgroup.
+		"Letter"=>array(
+			"regex"=>"(W|X|Y|Z)[\.\)\-]",
+			"values"=>array("W"=>"W","X"=>"X","Y"=>"Y","Z"=>"Z")
+		),
+		"Text"=>array(
+			"regex"=>"([^\n]+)"
+		),
+	),
+	"Answer"=>array(
+		"regex"=>"ANSWER(?:\:\-\.)?\s+([^\n]+)",
+	),
 );
 $MARK_AS_BAD_THRESHOLD=2;//RANDQ: How many times can a question can be marked bad until being ignored?
 $MAX_NUMQS=25;//RANDQ: How many questions can you fetch per pageload?
@@ -69,17 +91,17 @@ $adminPagesTitles=array(//In navbar and accessible, but only for admins
 
 
 date_default_timezone_set("America/Toronto");//(No Boston)
-ini_set('session.gc_maxlifetime',600);
-ini_set('display_errors',false);
-ini_set('log_errors',true);
-ini_set('safe_mode',true);
-ini_set('safe_mode_gid',true);
+//ini_set('session.gc_maxlifetime',600);
+//ini_set('display_errors',false);
+//ini_set('log_errors',true);
+//ini_set('safe_mode',true);
+//ini_set('safe_mode_gid',true);
 //register_globals 0
 //disable_functions extract mysql_connect
 //disable_classes mysql
 
 //Server-specific
-require "config.server.php";
+@include "config.server.php";
 
 /******************CUSTOM LOCAL*******************/
 @include "config.local.php";//If necessary, stuff will be overridden here as local dev settings.

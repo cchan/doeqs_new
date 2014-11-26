@@ -87,7 +87,6 @@ transition:background-color 0.5s;
 -ms-transition:background-color 0.5s;
 background-color:white;
 }
-
 </style>
 <div class='alert_neut'><b>Hotkeys:</b> space to display next hidden answer, backspace to hide last revealed answer, enter for fetching more questions</div>
 <br>
@@ -101,22 +100,20 @@ background-color:white;
 //QID,isB,Subject,isSA,Question,MCW,MCX,MCY,MCZ,Answer
 //--todo-- 'Google This' functionality
 echo $q->allToHTML(<<<HEREDOC
-<style>.mcchoice:empty{display:none;}.mcchoice::before{content:attr(data);}</style>
 <div class='question'>
-<span style='display:inline-block;width:40%;'>[QID %QID%]</span><span style='display:inline-block;width:59%;text-align:right;font-size:0.8em;'><a href="#" class="editbtn">[Edit]</a></span>
-<div>Mark as Bad: <input type="checkbox" name="markBad[]" value="%N%"/></div>
-<input type="hidden" name="qids[]" value="%QID%"/>
-<div style='font-weight:bold;text-align:center;' class="part">%PART%</div>
-<div><span class="subject">%SUBJECT%</span> <i><span class="type">%TYPE%</span></i> <span class="qtext">%QUESTION%</span></div>
-<div style="font-size:0.9em;">
-<div class='mcchoice' data='W) '>%W%</div>
-<div class='mcchoice' data='X) '>%X%</div>
-<div class='mcchoice' data='Y) '>%Y%</div>
-<div class='mcchoice' data='Z) '>%Z%</div>
-</div>
-<br>ANSWER: <span class='hiddenanswer'><span class='ans'>%ANSWER%</span> <span class='hov'>[hover to show]</span></span>
-<br>
-<a href="#">Back to Top</a>
+	<span class='qid'>[QID {{QID}}]</span><span class='edit'><a href="#">[Edit]</a></span>
+	<div>Mark as Bad: <input type="checkbox" name="markBad[]" value="{{N}}"/></div>
+	<input type="hidden" name="qids[]" value="{{QID}}"/>
+	<div style='font-weight:bold;text-align:center;' class="part">{qpart}</div>
+	<p>{{subj}} <i>{{qtype}}</i> <span class="qtext">{qtext}</span></p>
+	<ul>
+	{{# mcchoices}}
+	{{letter}}) <li>{{text}}</li>
+	{{/mcchoices}}
+	</ul>
+	<p>ANSWER: <span class='ans' data='{{answer}}'>[click to show]</span></p>
+	<br>
+	<a href="#">Back to Top</a>
 </div>
 HEREDOC
 );
