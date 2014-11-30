@@ -107,7 +107,7 @@ echo $q->allToHTML(<<<HEREDOC
 	<div style='font-weight:bold;text-align:center;' class="part">{qpart}</div>
 	<p>{{subj}} <i>{{qtype}}</i> <span class="qtext">{qtext}</span></p>
 	<ul>
-	{{# mcchoices}}
+	{{#mcchoices}}
 	{{letter}}) <li>{{text}}</li>
 	{{/mcchoices}}
 	</ul>
