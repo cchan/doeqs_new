@@ -1,4 +1,4 @@
-<?
+<?php
 if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 
 /*

@@ -77,7 +77,7 @@ ini_set('safe_mode_gid',true);
 //disable_classes mysql
 
 //Server-specific
-require "config.server.php";
+@include "config.server.php";
 
 /******************CUSTOM LOCAL*******************/
 @include "config.local.php";//If necessary, stuff will be overridden here as local dev settings.
