@@ -321,7 +321,7 @@ function templateify(){
 	
 	global $pagesTitles,$hiddenPagesTitles,$adminPagesTitles;
 	
-	$pagename=basename($_SERVER['REQUEST_URI'],'.php');
+	$pagename=basename(strtok($_SERVER['REQUEST_URI'],'?'),'.php');
 	//--TODO-- needs to be full relative paths - e.g. "classes/about.php" gets About.
 		//likewise, links in navbar must be absolute or relative to ROOT_PATH
 	
