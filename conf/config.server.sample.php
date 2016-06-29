@@ -1,15 +1,17 @@
-<?
+<?php
 if(!defined('ROOT_PATH')){header('HTTP/1.0 404 Not Found');die();}
 
 /*
 config.server.sample.php
 
 Sample of config.server.php, which contains server-specific settings, as well as anything secret
+
+The actual thing should be in the Dropbox.
 */
 
 $DOEQS_URL='http://doeqswebsite.com/';
 $WEBMASTER_EMAIL='hello@doeqswebsite.com';
-date_default_timezone_set("America/New York");
+date_default_timezone_set("America/New_York");
 
 /********************DATABASE ACCESS*******************/
 $DB_SERVER = "doeqs_server.db";
